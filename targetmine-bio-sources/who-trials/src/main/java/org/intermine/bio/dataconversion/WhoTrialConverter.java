@@ -16,8 +16,8 @@ public class WhoTrialConverter extends BioFileConverter {
 	
 	private static final Logger LOG = LogManager.getLogger( WhoTrialConverter.class );
 	
-	private static final String DATASET_TITLE = "GOBIOM";
-	private static final String DATA_SOURCE_NAME = "GOBIOM";
+	private static final String DATASET_TITLE = "who-trials";
+	private static final String DATA_SOURCE_NAME = "who-trials";
 	
 
 	/**
