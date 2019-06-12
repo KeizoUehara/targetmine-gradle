@@ -27,53 +27,55 @@ import org.intermine.xml.full.Item;
  */
 public class UmlsConverter extends BioFileConverter
 {
-    //
-    private static final String DATASET_TITLE = "UMLS";
-    private static final String DATA_SOURCE_NAME = "UMLS";
+	//
+	private static final String DATASET_TITLE = "UMLS";
+	private static final String DATA_SOURCE_NAME = "UMLS";
 
-    /**
-     * Constructor
-     * @param writer the ItemWriter used to handle the resultant items
-     * @param model the Model
-     */
-    public UmlsConverter(ItemWriter writer, Model model) {
-        super(writer, model, DATA_SOURCE_NAME, DATASET_TITLE);
-    }
-
-    private Map<String, Item> umlsItemMap = new HashMap<String, Item>();
-
-    private Item getTermItem(String identifier,String name) throws ObjectStoreException {
-	Item item = umlsItemMap.get(identifier);
-	if(item!=null) {
-	    return item;
+	/**
+	 * Constructor
+	 * @param writer the ItemWriter used to handle the resultant items
+	 * @param model the Model
+	 */
+	public UmlsConverter(ItemWriter writer, Model model) {
+		super(writer, model, DATA_SOURCE_NAME, DATASET_TITLE);
 	}
-	item = createItem("IntegratedTerm");
-	item.setAttribute("identifier", identifier);
-	item.setAttribute("name", name);
-	store(item);
-	umlsItemMap.put(identifier, item);
-	return item;
-    }
 
-    /**
-     * 
-     *
-     * {@inheritDoc}
-     */
-    public void process(Reader reader) throws Exception {
-	Iterator<String[]> iterator = FormattedTextParser.parseDelimitedReader(reader,'|');
-	while(iterator.hasNext()) {
-	    String[] mrConsoRow  = iterator.next();
-	    String identifier = mrConsoRow [0];
-	    Item item = getTermItem(identifier, mrConsoRow [14]);
-	    String sourceName = mrConsoRow [11];
-	    if("MSH".equals(sourceName)) {
-		String code = mrConsoRow [13];
-		Item meshItem = createItem("MeshTerm");
-		meshItem.setAttribute("identifier",code);
-		store(meshItem);
-		meshItem.setReference("cui", item);
-	    }
+	private Map<String, Item> umlsItemMap = new HashMap<String, Item>();
+
+	private Item getTermItem(String identifier,String name) throws ObjectStoreException {
+		Item item = umlsItemMap.get(identifier);
+		if(item!=null) {
+			return item;
+		}
+		item = createItem("IntegratedTerm");
+		item.setAttribute("identifier", identifier);
+		item.setAttribute("name", name);
+		store(item);
+		umlsItemMap.put(identifier, item);
+		return item;
 	}
-    }
+
+	/**
+	 * 
+	 *
+	 * {@inheritDoc}
+	 */
+	public void process(Reader reader) throws Exception {
+		Iterator<String[]> iterator = FormattedTextParser.parseDelimitedReader(reader,'|');
+		while(iterator.hasNext()) {
+			String[] mrConsoRow  = iterator.next();
+			String identifier = mrConsoRow [0];
+			Item item = getTermItem(identifier, mrConsoRow [14]);
+			String sourceName = mrConsoRow [11];
+			if("MSH".equals(sourceName)) {
+				String code = mrConsoRow [13];
+				Item meshItem = createItem("MeshTerm");
+				meshItem.setAttribute("identifier",code);
+				store(meshItem);
+				Item meshIntegratedItem = createItem("MeshIntegratedTerm");
+				meshIntegratedItem.setReference("cui", item);
+				meshIntegratedItem.setReference("mesh", meshItem);
+			}
+		}
+	}
 }

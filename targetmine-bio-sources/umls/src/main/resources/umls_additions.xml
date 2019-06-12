@@ -3,13 +3,17 @@
 
 <classes>
   <!-- add any <class> elements here -->
-  <class name="MeshTerm" extends="OntologyTerm" is-interface="true">
+  <class name="MeshIntegratedTerm" is-interface="true">
     <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="meshes"/>
+    <reference name="mesh" referenced-type="MeshTerm" reverse-reference="cuis"/>
   </class>
 
   <class name="IntegratedTerm" is-interface="ture">
+    <collection name="cui"  referenced-type="MeshIntegratedTerm" reverse-reference="mesh"/>
+  </class>
+  <class name="IntegratedTerm" is-interface="ture">
     <attribute name="identifier" type="java.lang.String"/>
     <attribute name="name" type="java.lang.String"/>
-    <collection name="meshes"  referenced-type="MeshTerm" reverse-reference="cui"/>
+    <collection name="meshes"  referenced-type="MeshIntegratedTerm" reverse-reference="cui"/>
   </class>
 </classes>
