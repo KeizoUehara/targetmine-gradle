@@ -9,12 +9,14 @@ package org.intermine.bio.dataconversion;
  * information or http://www.gnu.org/copyleft/lesser.html.
  *
  */
-
+import java.util.HashMap;
+import java.util.Map;
 import java.io.Reader;
 import java.util.Iterator;
 
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
+import org.intermine.objectstore.ObjectStoreException;
 import org.intermine.util.FormattedTextParser;
 import org.intermine.xml.full.Item;
 
@@ -38,19 +40,40 @@ public class UmlsConverter extends BioFileConverter
         super(writer, model, DATA_SOURCE_NAME, DATASET_TITLE);
     }
 
+    private Map<String, Item> umlsItemMap = new HashMap<String, Item>();
+
+    private Item getTermItem(String identifier,String name) throws ObjectStoreException {
+	Item item = umlsItemMap.get(identifier);
+	if(item!=null) {
+	    return item;
+	}
+	item = createItem("IntegratedTerm");
+	item.setAttribute("identifier", identifier);
+	item.setAttribute("name", name);
+	store(item);
+	umlsItemMap.put(identifier, item);
+	return item;
+    }
+
     /**
      * 
      *
      * {@inheritDoc}
      */
     public void process(Reader reader) throws Exception {
-    	Iterator<String[]> iterator = FormattedTextParser.parseDelimitedReader(reader,'|');
-    	while(iterator.hasNext()) {
-    		String[] mrConsoRow  = iterator.next();
-    		Item item = createItem("IntegratedTerm");
-    		item.setAttribute("identifier", mrConsoRow [0]);
-    		item.setAttribute("name", mrConsoRow [14]);
-    		store(item);
-    	}
+	Iterator<String[]> iterator = FormattedTextParser.parseDelimitedReader(reader,'|');
+	while(iterator.hasNext()) {
+	    String[] mrConsoRow  = iterator.next();
+	    String identifier = mrConsoRow [0];
+	    Item item = getTermItem(identifier, mrConsoRow [14]);
+	    String sourceName = mrConsoRow [11];
+	    if("MSH".equals(sourceName)) {
+		String code = mrConsoRow [13];
+		Item meshItem = createItem("MeshTerm");
+		meshItem.setAttribute("identifier",code);
+		store(meshItem);
+		meshItem.setReference("cui", item);
+	    }
+	}
     }
 }
