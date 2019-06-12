@@ -191,6 +191,10 @@
       <property name="mrConsoFile" value="/data/bio/db/umls/2018/2018AB/META/MRCONSO.RRF" />
       <property name="humanIdMappingFile" value="/data/bio/db/Targetmine/gobiom/HUMAN_9606_idmapping.dat" />
    </source>
+   <source name="umls" type="umls">
+	<property name="src.data.dir" location="/data/bio/db/umls/2018/2018AB/META"/>
+	<property name="src.data.dir.includes" value="MRCONSO.RRF"/>
+   </source>
 <!-- chenyian: for internal only | end -->
 
     <source name="orphanet" type="orphanet">
