@@ -22,6 +22,7 @@ subprojects {
     version = '3.1.0'
 
     apply plugin: 'java'
+    apply plugin: 'eclipse'
     apply plugin: 'maven'
     apply plugin: 'dbmodel'
     apply plugin: 'biosource-dbmodel'
