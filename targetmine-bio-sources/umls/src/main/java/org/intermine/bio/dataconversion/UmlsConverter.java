@@ -75,6 +75,7 @@ public class UmlsConverter extends BioFileConverter
 				Item meshIntegratedItem = createItem("MeshIntegratedTerm");
 				meshIntegratedItem.setReference("cui", item);
 				meshIntegratedItem.setReference("mesh", meshItem);
+				store(meshIntegratedItem);
 			}
 		}
 	}

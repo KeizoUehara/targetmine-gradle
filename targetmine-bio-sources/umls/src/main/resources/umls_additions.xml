@@ -8,10 +8,10 @@
     <reference name="mesh" referenced-type="MeshTerm" reverse-reference="cuis"/>
   </class>
 
-  <class name="IntegratedTerm" is-interface="ture">
-    <collection name="cui"  referenced-type="MeshIntegratedTerm" reverse-reference="mesh"/>
+  <class name="MeshTerm" is-interface="true">
+    <collection name="cuis"  referenced-type="MeshIntegratedTerm" reverse-reference="mesh"/>
   </class>
-  <class name="IntegratedTerm" is-interface="ture">
+  <class name="IntegratedTerm" is-interface="true">
     <attribute name="identifier" type="java.lang.String"/>
     <attribute name="name" type="java.lang.String"/>
     <collection name="meshes"  referenced-type="MeshIntegratedTerm" reverse-reference="cui"/>
