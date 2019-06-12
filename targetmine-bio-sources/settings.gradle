@@ -167,3 +167,5 @@ include ':bio-source-tm-uniprot'
 project(':bio-source-tm-uniprot').projectDir = new File(settingsDir, './tm-uniprot')
 include ':bio-source-wwpdb'
 project(':bio-source-wwpdb').projectDir = new File(settingsDir, './wwpdb')
+include ':bio-source-umls'
+project(':bio-source-umls').projectDir = new File(settingsDir, './umls')
