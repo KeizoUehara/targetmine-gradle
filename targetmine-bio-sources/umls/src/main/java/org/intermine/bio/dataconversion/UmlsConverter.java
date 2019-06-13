@@ -71,20 +71,14 @@ public class UmlsConverter extends BioFileConverter
 				String code = mrConsoRow [13];
 				Item meshItem = createItem("MeshTerm");
 				meshItem.setAttribute("identifier",code);
+				meshItem.setReference("cui", item);
 				store(meshItem);
-				Item meshIntegratedItem = createItem("MeshIntegratedTerm");
-				meshIntegratedItem.setReference("cui", item);
-				meshIntegratedItem.setReference("mesh", meshItem);
-				store(meshIntegratedItem);
 			}else if("GO".equals(sourceName)) {
 				String code = mrConsoRow [13];
-				Item goItem = createItem("GoTerm");
+				Item goItem = createItem("GOTerm");
 				goItem.setAttribute("identifier",code);
+				goItem.setReference("cui", item);
 				store(goItem);
-				Item goIntegratedItem = createItem("GoIntegratedTerm");
-				goIntegratedItem.setReference("cui", item);
-				goIntegratedItem.setReference("go", goItem);
-				store(goIntegratedItem);
 			}
 		}
 	}
