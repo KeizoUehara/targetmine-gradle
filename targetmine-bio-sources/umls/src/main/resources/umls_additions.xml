@@ -11,9 +11,18 @@
   <class name="MeshTerm" is-interface="true">
     <collection name="cuis"  referenced-type="MeshIntegratedTerm" reverse-reference="mesh"/>
   </class>
+  <class name="GoIntegratedTerm" is-interface="true">
+    <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="gos"/>
+    <reference name="go" referenced-type="GoTerm" reverse-reference="cuis"/>
+  </class>
+
+  <class name="GoTerm" is-interface="true">
+    <collection name="cuis"  referenced-type="MeshIntegratedTerm" reverse-reference="mesh"/>
+  </class>
   <class name="IntegratedTerm" is-interface="true">
     <attribute name="identifier" type="java.lang.String"/>
     <attribute name="name" type="java.lang.String"/>
     <collection name="meshes"  referenced-type="MeshIntegratedTerm" reverse-reference="cui"/>
+    <collection name="gos"  referenced-type="GoIntegratedTerm" reverse-reference="cui"/>
   </class>
 </classes>
