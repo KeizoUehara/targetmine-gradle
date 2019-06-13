@@ -318,7 +318,10 @@ public class GobiomConverter extends BioFileConverter {
 		return diseaseTermMap.get( cui );
 		
 	}
-	
+	public static void main(String[] args) {
+		String line = "xref: UMLS_CUI:C1515289";
+		System.out.println(line.substring("xref: UMLS_CUI:".length()));
+	}
 	private String getGene( String geneSymbol ) throws ObjectStoreException {
 		
 		String ret = geneMap.get( geneSymbol );

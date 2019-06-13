@@ -30,7 +30,6 @@ public class UmlsConverter extends BioFileConverter
 	//
 	private static final String DATASET_TITLE = "UMLS";
 	private static final String DATA_SOURCE_NAME = "UMLS";
-
 	/**
 	 * Constructor
 	 * @param writer the ItemWriter used to handle the resultant items
@@ -69,8 +68,7 @@ public class UmlsConverter extends BioFileConverter
 			String sourceName = mrConsoRow [11];
 			if("MSH".equals(sourceName)) {
 				String code = mrConsoRow [13];
-				Item meshItem = createItem("MeshTerm");
-				meshItem.setAttribute("identifier",code);
+				Item meshItem = getMeshTerm(code);
 				meshItem.setReference("cui", item);
 				store(meshItem);
 			}else if("GO".equals(sourceName)) {
@@ -82,4 +80,30 @@ public class UmlsConverter extends BioFileConverter
 			}
 		}
 	}
+    private Map<String, Item> meshTermMap = new HashMap<String, Item>();
+    private Item getMeshTerm(String meshIdentifier) throws ObjectStoreException {
+    	Item ret = meshTermMap.get(meshIdentifier);
+    	if (ret == null) {
+    		Item item = createItem("MeshTerm");
+    		item.setAttribute("identifier", meshIdentifier);
+    		item.setReference("ontology", getOntology("MeSH"));
+    		store(item);
+    		meshTermMap.put(meshIdentifier, item);
+    	}
+    	return ret;
+    }
+
+    private Map<String, String> ontologyMap = new HashMap<String, String>();
+    private String getOntology(String name) throws ObjectStoreException {
+    	String ret = ontologyMap.get(name);
+    	if (ret == null) {
+    		Item item = createItem("Ontology");
+    		item.setAttribute("name", name);
+    		store(item);
+    		ret = item.getIdentifier();
+    		ontologyMap.put(name, ret);
+    	}
+    	return ret;
+    }
+
 }
