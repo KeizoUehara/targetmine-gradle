@@ -44,6 +44,7 @@ public class DoMeshConverter extends BioFileConverter
     	String identifier = null;
     	boolean isObsolete = false;
     	Set<String> meshIdSet = new HashSet<String>();
+    	Set<String> cuiSet = new HashSet<String>();
     	while ((line = in.readLine()) != null) {
     		if (line.equals("[Term]")) {
     			isTerm = true;
@@ -54,21 +55,36 @@ public class DoMeshConverter extends BioFileConverter
     			if (!"".equals(meshIdentifier)) {
     				meshIdSet.add(meshIdentifier);
     			}
+    		} else if (line.startsWith("xref: MESH:")) {
+    			String cui = line.substring(line.indexOf("MESH:") + 5);
+    			if (!"".equals(cui)) {
+    				cuiSet.add(cui);
+    			}
     		} else if ("is_obsolete: true".equals(line.trim())) {
     			isObsolete = true;
     		} else if ("".equals(line.trim())) {
-    			if (isTerm && !isObsolete && !meshIdSet.isEmpty()) {
-    				Item efoTerm = createItem("DOTerm");
-    				efoTerm.setAttribute("identifier", identifier);
-    				efoTerm.setReference("ontology", getOntology("DO"));
+    			if (isTerm && !isObsolete) {
+    				Item doTerm = createItem("DOTerm");
+    				doTerm.setAttribute("identifier", identifier);
+    				doTerm.setReference("ontology", getOntology("DO"));
     				for (String meshIdentifier : meshIdSet) {
-    					efoTerm.addToCollection("crossReferences", getMeshTerm(meshIdentifier));
+    					doTerm.addToCollection("crossReferences", getMeshTerm(meshIdentifier));
     				}
-    				store(efoTerm);
+    				for (String cui : cuiSet) {
+        				Item umlsTerm = createItem("IntegratedTerm");
+        				umlsTerm.setAttribute("identifier", cui);
+        				Item doIntegratedTerm = createItem("DOIntegratedTerm");
+        				doIntegratedTerm.setReference("umls", umlsTerm);
+        				doIntegratedTerm.setReference("do", doTerm);
+        				store(umlsTerm);
+        				store(doIntegratedTerm);
+    				}
+    				store(doTerm);
     			}
     			isTerm = false;
     			isObsolete = false;
     			meshIdSet = new HashSet<String>();
+    			cuiSet = new HashSet<String>();
     		}
     		
     	}

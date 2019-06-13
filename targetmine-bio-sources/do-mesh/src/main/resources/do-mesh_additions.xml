@@ -1,6 +1,15 @@
 <?xml version="1.0"?>
 <classes>
-	<class name="DOTerm" extends="OntologyTerm" is-interface="true"/>
+	<class name="DOTerm" extends="OntologyTerm" is-interface="true">
+	    <collection name="umlses"  referenced-type="DOIntegratedTerm" reverse-reference="do"/>
+	</class>
 	<class name="MeshTerm" extends="OntologyTerm" is-interface="true"/>
-
+	<class name="DOIntegratedTerm" is-interface="true">
+	    <reference name="do"  referenced-type="DOTerm" reverse-reference="dos"/>
+	    <reference name="umls"  referenced-type="IntegratedTerm" reverse-reference="dos"/>
+	</class>
+	<class name="IntegratedTerm" is-interface="true">
+	    <attribute name="identifier" type="java.lang.String"/>
+	    <collection name="dos"  referenced-type="DOIntegratedTerm" reverse-reference="umls"/>
+	</class>
 </classes>
