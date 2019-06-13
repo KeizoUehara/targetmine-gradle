@@ -55,8 +55,8 @@ public class DoMeshConverter extends BioFileConverter
     			if (!"".equals(meshIdentifier)) {
     				meshIdSet.add(meshIdentifier);
     			}
-    		} else if (line.startsWith("xref: MESH:")) {
-    			String cui = line.substring(line.indexOf("MESH:") + 5);
+    		} else if (line.startsWith("xref: UMLS_CUI:")) {
+		    String cui = line.substring("xref: UMLS_CUI:".length());
     			if (!"".equals(cui)) {
     				cuiSet.add(cui);
     			}
@@ -75,7 +75,7 @@ public class DoMeshConverter extends BioFileConverter
         				umlsTerm.setAttribute("identifier", cui);
         				Item doIntegratedTerm = createItem("DOIntegratedTerm");
         				doIntegratedTerm.setReference("umls", umlsTerm);
-        				doIntegratedTerm.setReference("do", doTerm);
+        				doIntegratedTerm.setReference("doterm", doTerm);
         				store(umlsTerm);
         				store(doIntegratedTerm);
     				}

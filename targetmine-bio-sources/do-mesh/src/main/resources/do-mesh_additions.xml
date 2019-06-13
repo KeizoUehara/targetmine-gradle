@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <classes>
 	<class name="DOTerm" extends="OntologyTerm" is-interface="true">
-	    <collection name="umlses"  referenced-type="DOIntegratedTerm" reverse-reference="do"/>
+	    <collection name="umlses"  referenced-type="DOIntegratedTerm" reverse-reference="doterm"/>
 	</class>
 	<class name="MeshTerm" extends="OntologyTerm" is-interface="true"/>
 	<class name="DOIntegratedTerm" is-interface="true">
-	    <reference name="do"  referenced-type="DOTerm" reverse-reference="dos"/>
+	    <reference name="doterm"  referenced-type="DOTerm" reverse-reference="umlses"/>
 	    <reference name="umls"  referenced-type="IntegratedTerm" reverse-reference="dos"/>
 	</class>
 	<class name="IntegratedTerm" is-interface="true">

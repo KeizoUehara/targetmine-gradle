@@ -3,7 +3,7 @@
 
 <classes>
   <!-- add any <class> elements here -->
-  <class name="MeshTerm" is-interface="true">
+  <class name="MeshTerm" extends="OntologyTerm" is-interface="true">
     <reference name="cui"  referenced-type="IntegratedTerm" reverse-reference="meshes"/>
   </class>
   <class name="GOTerm" extends="OntologyTerm" is-interface="true">
