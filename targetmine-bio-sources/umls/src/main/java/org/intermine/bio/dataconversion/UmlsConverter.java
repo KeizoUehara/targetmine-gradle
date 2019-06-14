@@ -11,6 +11,8 @@ package org.intermine.bio.dataconversion;
  */
 import java.util.HashMap;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.io.Reader;
 import java.util.Iterator;
 
@@ -68,42 +70,42 @@ public class UmlsConverter extends BioFileConverter
 			String sourceName = mrConsoRow [11];
 			if("MSH".equals(sourceName)) {
 				String code = mrConsoRow [13];
-				Item meshItem = getMeshTerm(code);
-				meshItem.setReference("cui", item);
-				store(meshItem);
+				creteMeshIntegratedTerm(code,item,identifier);
 			}else if("GO".equals(sourceName)) {
 				String code = mrConsoRow [13];
 				Item goItem = createItem("GOTerm");
 				goItem.setAttribute("identifier",code);
-				goItem.setReference("cui", item);
 				store(goItem);
+				Item goIntegratedItem = createItem("GOIntegratedTerm");
+				goIntegratedItem.setReference("cui", item);
+				goIntegratedItem.setReference("go", goItem);
+				store(goIntegratedItem);
 			}
 		}
 	}
+    private Set<String> meshIntegratedTermMap = new HashSet<String>();
+    private Item creteMeshIntegratedTerm(String meshId,Item integratedTerm,String cui) throws ObjectStoreException {
+	String key = meshId+":"+cui;
+	if(meshIntegratedTermMap.contains(key)) {
+	    return null;
+	}
+	Item item = createItem("MeshIntegratedTerm");
+	item.setReference("mesh", getMeshTerm(meshId));
+	item.setReference("cui", integratedTerm);
+	store(item);
+	meshIntegratedTermMap.add(key);
+	return item;
+    }
     private Map<String, Item> meshTermMap = new HashMap<String, Item>();
     private Item getMeshTerm(String meshIdentifier) throws ObjectStoreException {
-    	Item ret = meshTermMap.get(meshIdentifier);
-    	if (ret == null) {
-    		Item item = createItem("MeshTerm");
+    	Item item = meshTermMap.get(meshIdentifier);
+    	if (item == null) {
+    		item = createItem("MeshTerm");
     		item.setAttribute("identifier", meshIdentifier);
-    		item.setReference("ontology", getOntology("MeSH"));
     		store(item);
     		meshTermMap.put(meshIdentifier, item);
     	}
-    	return ret;
-    }
-
-    private Map<String, String> ontologyMap = new HashMap<String, String>();
-    private String getOntology(String name) throws ObjectStoreException {
-    	String ret = ontologyMap.get(name);
-    	if (ret == null) {
-    		Item item = createItem("Ontology");
-    		item.setAttribute("name", name);
-    		store(item);
-    		ret = item.getIdentifier();
-    		ontologyMap.put(name, ret);
-    	}
-    	return ret;
+    	return item;
     }
 
 }

@@ -3,16 +3,24 @@
 
 <classes>
   <!-- add any <class> elements here -->
+  <class name="MeshIntegratedTerm" is-interface="true">
+    <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="meshes"/>
+    <reference name="mesh" referenced-type="MeshTerm" reverse-reference="cuis"/>
+  </class>
   <class name="MeshTerm" extends="OntologyTerm" is-interface="true">
-    <reference name="cui"  referenced-type="IntegratedTerm" reverse-reference="meshes"/>
+    <collection name="cuis"  referenced-type="MeshIntegratedTerm" reverse-reference="mesh"/>
   </class>
   <class name="GOTerm" extends="OntologyTerm" is-interface="true">
-    <reference name="cui"  referenced-type="IntegratedTerm" reverse-reference="gos"/>
+    <collection name="cuis"  referenced-type="GOIntegratedTerm" reverse-reference="go"/>
+  </class>
+  <class name="GOIntegratedTerm" is-interface="true">
+    <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="gos"/>
+    <reference name="go" referenced-type="GOTerm" reverse-reference="cuis"/>
   </class>
   <class name="IntegratedTerm" is-interface="true">
     <attribute name="identifier" type="java.lang.String"/>
     <attribute name="name" type="java.lang.String"/>
-    <collection name="meshes"  referenced-type="MeshTerm" reverse-reference="cui"/>
-    <collection name="gos"  referenced-type="GOTerm" reverse-reference="cui"/>
+    <collection name="meshes"  referenced-type="MeshIntegratedTerm" reverse-reference="cui"/>
+    <collection name="gos"  referenced-type="GOIntegratedTerm" reverse-reference="cui"/>
   </class>
 </classes>
