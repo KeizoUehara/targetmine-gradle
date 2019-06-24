@@ -20,6 +20,7 @@
   <class name="IntegratedTerm" is-interface="true">
     <attribute name="identifier" type="java.lang.String"/>
     <attribute name="name" type="java.lang.String"/>
+    <attribute name="semanticType" type="java.lang.String"/>
     <collection name="meshes"  referenced-type="MeshIntegratedTerm" reverse-reference="cui"/>
     <collection name="gos"  referenced-type="GOIntegratedTerm" reverse-reference="cui"/>
   </class>

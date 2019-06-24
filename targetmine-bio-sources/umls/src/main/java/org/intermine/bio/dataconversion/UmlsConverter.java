@@ -14,8 +14,13 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 import java.io.Reader;
+import java.io.File;
+import java.io.IOException;
 import java.util.Iterator;
+import java.nio.file.Files;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
 import org.intermine.objectstore.ObjectStoreException;
@@ -29,6 +34,9 @@ import org.intermine.xml.full.Item;
  */
 public class UmlsConverter extends BioFileConverter
 {
+    private static final Logger LOG = LogManager.getLogger( UmlsConverter.class );
+
+
 	//
 	private static final String DATASET_TITLE = "UMLS";
 	private static final String DATA_SOURCE_NAME = "UMLS";
@@ -40,21 +48,39 @@ public class UmlsConverter extends BioFileConverter
 	public UmlsConverter(ItemWriter writer, Model model) {
 		super(writer, model, DATA_SOURCE_NAME, DATASET_TITLE);
 	}
-
-	private Map<String, Item> umlsItemMap = new HashMap<String, Item>();
-
-	private Item getTermItem(String identifier,String name) throws ObjectStoreException {
-		Item item = umlsItemMap.get(identifier);
-		if(item!=null) {
-			return item;
+    private File semanticFile;
+    public void setSemanticFile(File semanticFile) {
+	this.semanticFile = semanticFile;
+    }
+    private Map<String, String> semanticTypeMap = new HashMap<String, String>();
+    private void loadSemanticType() throws IOException {
+	LOG.debug("semanticFile = "+semanticFile);
+	Files.lines(semanticFile.toPath()).forEach(line ->{
+		String[] split = line.split("\\|");
+		String cui = split[0];
+		if(split[2].startsWith("B2.2.1.2.1")) {
+		    semanticTypeMap.put(cui, split[3]);
 		}
-		item = createItem("IntegratedTerm");
-		item.setAttribute("identifier", identifier);
-		item.setAttribute("name", name);
-		store(item);
-		umlsItemMap.put(identifier, item);
-		return item;
+	    });;
+	LOG.debug("semanticTypeMap.size = "+semanticTypeMap.size());
+    }
+    private Map<String, Item> umlsItemMap = new HashMap<String, Item>();
+
+    private Item getTermItem(String identifier,String name) throws ObjectStoreException {
+	if(umlsItemMap.containsKey(identifier)) {
+	    return umlsItemMap.get(identifier);
 	}
+	Item item = null;
+	if(semanticTypeMap.containsKey(identifier)) {
+	    item = createItem("IntegratedTerm");
+	    item.setAttribute("identifier", identifier);
+	    item.setAttribute("semanticType", semanticTypeMap.get(identifier));
+	    item.setAttribute("name", name);
+	    store(item);
+	}
+	umlsItemMap.put(identifier, item);
+	return item;
+    }
 
 	/**
 	 * 
@@ -62,27 +88,38 @@ public class UmlsConverter extends BioFileConverter
 	 * {@inheritDoc}
 	 */
 	public void process(Reader reader) throws Exception {
+	    loadSemanticType();
 		Iterator<String[]> iterator = FormattedTextParser.parseDelimitedReader(reader,'|');
 		while(iterator.hasNext()) {
 			String[] mrConsoRow  = iterator.next();
 			String identifier = mrConsoRow [0];
 			Item item = getTermItem(identifier, mrConsoRow [14]);
+			if(item==null){
+			    continue;
+			}
 			String sourceName = mrConsoRow [11];
 			if("MSH".equals(sourceName)) {
 				String code = mrConsoRow [13];
 				creteMeshIntegratedTerm(code,item,identifier);
 			}else if("GO".equals(sourceName)) {
 				String code = mrConsoRow [13];
-				Item goItem = createItem("GOTerm");
-				goItem.setAttribute("identifier",code);
-				store(goItem);
-				Item goIntegratedItem = createItem("GOIntegratedTerm");
-				goIntegratedItem.setReference("cui", item);
-				goIntegratedItem.setReference("go", goItem);
-				store(goIntegratedItem);
+				creteGOIntegratedTerm(code,item,identifier);
 			}
 		}
 	}
+    private Set<String> goIntegratedTermMap = new HashSet<String>();
+    private Item creteGOIntegratedTerm(String goId,Item integratedTerm,String cui) throws ObjectStoreException {
+	String key = goId+":"+cui;
+	if(goIntegratedTermMap.contains(key)) {
+	    return null;
+	}
+	Item item = createItem("GOIntegratedTerm");
+	item.setReference("go", getGOTerm(goId));
+	item.setReference("cui", integratedTerm);
+	store(item);
+	goIntegratedTermMap.add(key);
+	return item;
+    }
     private Set<String> meshIntegratedTermMap = new HashSet<String>();
     private Item creteMeshIntegratedTerm(String meshId,Item integratedTerm,String cui) throws ObjectStoreException {
 	String key = meshId+":"+cui;
@@ -102,10 +139,35 @@ public class UmlsConverter extends BioFileConverter
     	if (item == null) {
     		item = createItem("MeshTerm");
     		item.setAttribute("identifier", meshIdentifier);
+		item.setReference("ontology",getOntology("MeSH"));
     		store(item);
     		meshTermMap.put(meshIdentifier, item);
     	}
     	return item;
+    }
+    private Map<String, Item> goTermMap = new HashMap<String, Item>();
+    private Item getGOTerm(String goIdentifier) throws ObjectStoreException {
+    	Item item = goTermMap.get(goIdentifier);
+    	if (item == null) {
+    		item = createItem("GOTerm");
+    		item.setAttribute("identifier", goIdentifier);
+		item.setReference("ontology",getOntology("GO"));
+    		store(item);
+    		goTermMap.put(goIdentifier, item);
+    	}
+    	return item;
+    }
+    private Map<String, String> ontologyMap = new HashMap<String, String>();
+    private String getOntology(String name) throws ObjectStoreException {
+	String ret = ontologyMap.get(name);
+	if (ret == null) {
+	    Item item = createItem("Ontology");
+	    item.setAttribute("name", name);
+	    store(item);
+	    ret = item.getIdentifier();
+	    ontologyMap.put(name, ret);
+	}
+	return ret;
     }
 
 }

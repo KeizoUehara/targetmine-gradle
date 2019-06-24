@@ -194,6 +194,7 @@
    <source name="umls" type="umls">
 	<property name="src.data.dir" location="/data/bio/db/umls/2018/2018AB/META"/>
 	<property name="src.data.dir.includes" value="MRCONSO.RRF"/>
+	<property name="semanticFile" value="/data/bio/db/umls/2018/2018AB/META/MRSTY.RRF"/>
    </source>
 <!-- chenyian: for internal only | end -->
 

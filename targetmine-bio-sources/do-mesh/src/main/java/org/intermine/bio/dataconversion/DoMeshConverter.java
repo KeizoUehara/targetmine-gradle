@@ -71,12 +71,10 @@ public class DoMeshConverter extends BioFileConverter
     					doTerm.addToCollection("crossReferences", getMeshTerm(meshIdentifier));
     				}
     				for (String cui : cuiSet) {
-        				Item umlsTerm = createItem("IntegratedTerm");
-        				umlsTerm.setAttribute("identifier", cui);
+        				Item umlsTerm = getIntegratedTerm(cui);
         				Item doIntegratedTerm = createItem("DOIntegratedTerm");
         				doIntegratedTerm.setReference("umls", umlsTerm);
         				doIntegratedTerm.setReference("doterm", doTerm);
-        				store(umlsTerm);
         				store(doIntegratedTerm);
     				}
     				store(doTerm);
@@ -91,7 +89,17 @@ public class DoMeshConverter extends BioFileConverter
 
     }
     
-    
+    private Map<String, Item> integratedTermMap = new HashMap<String, Item>();
+    private Item getIntegratedTerm(String cui) throws ObjectStoreException {
+        Item item = integratedTermMap.get(cui);
+        if (item == null) {
+	    item = createItem("IntegratedTerm");
+	    item.setAttribute("identifier", cui);
+	    store(item);
+	    integratedTermMap.put(cui, item);
+        }
+        return item;
+    }
     private Map<String, String> meshTermMap = new HashMap<String, String>();
     private String getMeshTerm(String meshIdentifier) throws ObjectStoreException {
     	String ret = meshTermMap.get(meshIdentifier);
