@@ -10,14 +10,23 @@
 	<class name="DiseaseTerm" extends="OntologyTerm" is-interface="true" >
 		<collection name="genes" referenced-type="Disease" reverse-reference="diseaseTerm"/>
 		<collection name="synonyms" referenced-type="DiseaseSynonym"/>
+	    <collection name="cuis"  referenced-type="OMIMIntegratedTerm" reverse-reference="omim"/>
 	</class>
 	<class name="Gene" is-interface="true">
 		<attribute name="primaryIdentifier" type="java.lang.String"/>
 		<collection name="diseases" referenced-type="Disease" reverse-reference="gene"/>
 	</class>
+	<class name="OMIMIntegratedTerm" is-interface="true">
+    	<reference name="cui" referenced-type="IntegratedTerm" reverse-reference="omims"/>
+	    <reference name="omim" referenced-type="DiseaseTerm" reverse-reference="cuis"/>
+	</class>
 
 	<class name="DiseaseSynonym" extends="OntologyTermSynonym" is-interface="true">
 		<reference name="diseaseTerm" referenced-type="DiseaseTerm"/>
 	</class>
+  <class name="IntegratedTerm" is-interface="true">
+    <attribute name="identifier" type="java.lang.String"/>
+    <collection name="omims"  referenced-type="OMIMIntegratedTerm" reverse-reference="cui"/>
+  </class>
 
 </classes>

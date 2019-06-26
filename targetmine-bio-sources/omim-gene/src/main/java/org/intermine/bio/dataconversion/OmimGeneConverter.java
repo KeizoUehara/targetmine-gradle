@@ -5,8 +5,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -15,6 +17,7 @@ import org.intermine.metadata.Model;
 import org.intermine.objectstore.ObjectStoreException;
 import org.intermine.util.FormattedTextParser;
 import org.intermine.xml.full.Item;
+import org.obo.history.CreateObjectHistoryItem;
 
 /**
  * This parser integrates OMIM data from the file 'mim2gene_medgen' in the NCBI FTP site 
@@ -74,18 +77,47 @@ public class OmimGeneConverter extends BioFileConverter {
 			}
 			String omimId = cols[0];
 			String geneId = cols[1];
-//			String cui = cols[4];
+			String cui = cols[4];
 			
     		Item item = createItem("Disease");
     		item.setReference("diseaseTerm", getDiseaseTerm(omimId));
     		item.setReference("gene", getGene(geneId));
+    		if(!cui.equals("-")) {
+    			creteOMIMIntegratedTerm(item,omimId,cui);
+    		}
     		item.addToCollection("sources", getDataSource("OMIM"));
     		store(item);
 
 		}
 
 	}
-	
+	private Map<String, Item> umlsItemMap = new HashMap<String, Item>();
+
+	private Item getTermItem(String identifier) throws ObjectStoreException {
+		if(umlsItemMap.containsKey(identifier)) {
+			return umlsItemMap.get(identifier);
+		}
+		Item item = createItem("IntegratedTerm");
+		item.setAttribute("identifier", identifier);
+		store(item);
+		item = null;
+		umlsItemMap.put(identifier, item);
+		return item;
+	}
+	private Set<String> omimIntegratedTermMap = new HashSet<String>();
+	private Item creteOMIMIntegratedTerm(Item omimTerm,String omimId,String cui) throws ObjectStoreException {
+		String key = omimId+":"+cui;
+		if(omimIntegratedTermMap.contains(key)) {
+			return null;
+		}
+		Item item = createItem("OMIMIntegratedTerm");
+		item.setReference("omim", omimTerm);
+		item.setReference("cui", getTermItem(cui));
+		store(item);
+		omimIntegratedTermMap.add(key);
+		return item;
+	}
+
 	private void readTitleFile() throws Exception {
 		BufferedReader reader = new BufferedReader(new FileReader(titleFile));
 		String line;
