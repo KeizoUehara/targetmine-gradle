@@ -17,11 +17,16 @@
     <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="gos"/>
     <reference name="go" referenced-type="GOTerm" reverse-reference="cuis"/>
   </class>
+  <class name="OMIMIntegratedTerm" is-interface="true">
+    <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="gos"/>
+    <reference name="omim" referenced-type="DiseaseTerm" reverse-reference="omims"/>
+  </class>
   <class name="IntegratedTerm" is-interface="true">
     <attribute name="identifier" type="java.lang.String"/>
     <attribute name="name" type="java.lang.String"/>
     <attribute name="semanticType" type="java.lang.String"/>
     <collection name="meshes"  referenced-type="MeshIntegratedTerm" reverse-reference="cui"/>
     <collection name="gos"  referenced-type="GOIntegratedTerm" reverse-reference="cui"/>
+    <collection name="omims"  referenced-type="OMIMIntegratedTerm" reverse-reference="cui"/>
   </class>
 </classes>

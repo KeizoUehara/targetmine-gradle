@@ -130,6 +130,7 @@ public class OmimGeneConverter extends BioFileConverter {
 			if (line != null) {
 				String[] cols = line.split("\t", 3);
 				diseaseTerm.setAttribute("name", cols[1]);
+				diseaseTerm.setReference("ontology", getOntology("OMIM"));
 				String aliasString = cols[2];
 				if (!StringUtils.isEmpty(aliasString)){
 					String[] alias = aliasString.split(";;");
@@ -148,6 +149,18 @@ public class OmimGeneConverter extends BioFileConverter {
 			store(diseaseTerm);
 			
 			diseaseTermMap.put(omimId, ret);
+		}
+		return ret;
+	}
+	private Map<String, String> ontologyMap = new HashMap<String, String>();
+	private String getOntology(String name) throws ObjectStoreException {
+		String ret = ontologyMap.get(name);
+		if (ret == null) {
+			Item item = createItem("Ontology");
+			item.setAttribute("name", name);
+			store(item);
+			ret = item.getIdentifier();
+			ontologyMap.put(name, ret);
 		}
 		return ret;
 	}
