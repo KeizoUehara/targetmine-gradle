@@ -13,13 +13,16 @@
   <class name="GOTerm" extends="OntologyTerm" is-interface="true">
     <collection name="cuis"  referenced-type="GOIntegratedTerm" reverse-reference="go"/>
   </class>
+  <class name="DiseaseTerm" extends="OntologyTerm" is-interface="true">
+    <collection name="cuis"  referenced-type="OMIMIntegratedTerm" reverse-reference="omim"/>
+  </class>
   <class name="GOIntegratedTerm" is-interface="true">
     <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="gos"/>
     <reference name="go" referenced-type="GOTerm" reverse-reference="cuis"/>
   </class>
   <class name="OMIMIntegratedTerm" is-interface="true">
-    <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="gos"/>
-    <reference name="omim" referenced-type="DiseaseTerm" reverse-reference="omims"/>
+    <reference name="cui" referenced-type="IntegratedTerm" reverse-reference="omims"/>
+    <reference name="omim" referenced-type="DiseaseTerm" reverse-reference="cuis"/>
   </class>
   <class name="IntegratedTerm" is-interface="true">
     <attribute name="identifier" type="java.lang.String"/>

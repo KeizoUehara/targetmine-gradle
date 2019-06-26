@@ -106,7 +106,7 @@ public class UmlsConverter extends BioFileConverter
 				creteGOIntegratedTerm(code,item,identifier);
 			}else if("OMIM".equals(sourceName)) {
 				String code = mrConsoRow [13];
-				creteOMIMIntegratedTerm(code,item,identifier);
+				//				creteOMIMIntegratedTerm(code,item,identifier);
 			}
 		}
 	}
