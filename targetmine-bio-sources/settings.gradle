@@ -179,3 +179,5 @@ include ':bio-source-chembl-mechanism'
 project(':bio-source-chembl-mechanism').projectDir = new File(settingsDir, './chembl-mechanism')
 include ':bio-source-umls'
 project(':bio-source-umls').projectDir = new File(settingsDir, './umls')
+include ':bio-source-utils'
+project(':bio-source-utils').projectDir = new File(settingsDir, './utils')
