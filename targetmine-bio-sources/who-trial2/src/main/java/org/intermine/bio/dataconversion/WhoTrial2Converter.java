@@ -114,6 +114,9 @@ public class WhoTrial2Converter extends BioFileConverter {
 	}
 
 	private String[] convertConditionToDiseaseNameSet(String condition) {
+		if(condition==null){
+			return new String[0];
+		}
 		String[] diseaseNames = condition.split("<[Bb][Rr]>");//condition.split("\n");
 
 		ArrayList<String> diseaseNameSet = new ArrayList<>();
