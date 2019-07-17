@@ -193,14 +193,22 @@ public class WhoTrial2Converter extends BioFileConverter {
         	for (String line : lines) {
 				Matcher matcher = meddraPattern.matcher(line);
 				if(matcher.matches()) {
-					cui = mrConsoMap.get(matcher.group(1));
+					cui = mrConsoMap.get(matcher.group(1).trim().toLowerCase());
+					return cui;
+				}
+			}
+        }
+        String[] split = diseaseName.split(";");
+		if(split.length>1) {
+			for (String string : split) {
+				cui = mrConsoMap.get(string.toLowerCase());
+				if(cui!=null) {
 					return cui;
 				}
 			}
         }
     	return null;
     }
-
     /**
      * {@inheritDoc}
      */
