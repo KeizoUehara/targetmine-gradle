@@ -184,7 +184,7 @@ public class WhoTrial2Converter extends BioFileConverter {
     }
     private static Pattern meddraPattern = Pattern.compile("Term:\\s+(.*)\\s*");
     private String getCUI(String diseaseName) {
-        String cui = mrConsoMap.get(diseaseName.toLowerCase());
+        String cui = mrConsoMap.get(diseaseName.trim().toLowerCase());
         if (cui != null) {
             return cui;
         }
