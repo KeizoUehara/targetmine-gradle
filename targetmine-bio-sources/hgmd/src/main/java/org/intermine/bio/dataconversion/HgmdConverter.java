@@ -27,8 +27,8 @@ import java.sql.Statement;
 public class HgmdConverter extends BioDBConverter
 {
     // 
-    private static final String DATASET_TITLE = "Add DataSet.title here";
-    private static final String DATA_SOURCE_NAME = "Add DataSource.name here";
+    private static final String DATASET_TITLE = "hgmd";
+    private static final String DATA_SOURCE_NAME = "hgmd";
 
 
     /**
@@ -56,7 +56,20 @@ public class HgmdConverter extends BioDBConverter
         // String query = "select column from table;";
         // ResultSet res = stmt.executeQuery(query);
         // while (res.next()) {
-        // }   
+        // }
+        Statement stmt = connection.createStatement();
+        String queryAllmut = "select * from allmut limit 5";
+        ResultSet resAllmut = stmt.executeQuery(queryAllmut);
+        while (resAllmut.next()) {
+            String disease = resAllmut.getString("disease");
+            String gene = resAllmut.getString("gene");
+
+            Item item = createItem("Hgmd");
+            item.setAttribute("disease", disease);
+            item.setAttribute("gene", gene);
+            store(item);
+
+        }
     }
 
     /**
