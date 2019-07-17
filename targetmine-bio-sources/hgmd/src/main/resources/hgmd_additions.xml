@@ -3,5 +3,9 @@
 
 <classes>
 <!-- add any <class> elements here -->
+    <class name="Hgmd" is-interface="true">
+        <attribute name="disease" type="java.lang.String"/>
+        <attribute name="gene" type="java.lang.String"/>
+    </class>
 
 </classes>
