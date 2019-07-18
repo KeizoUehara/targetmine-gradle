@@ -58,15 +58,18 @@ public class HgmdConverter extends BioDBConverter
         // while (res.next()) {
         // }
         Statement stmt = connection.createStatement();
-        String queryAllmut = "select * from allmut limit 5";
+        String queryAllmut = "select disease, gene, phen_id from hgmd_pro.allmut JOIN " +
+                "hgmd_phenbase.hgmd_mutation ON hgmd_pro.allmut.acc_num = hgmd_phenbase.hgmd_mutation.acc_num limit 5;";
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
             String disease = resAllmut.getString("disease");
             String gene = resAllmut.getString("gene");
+            String phenId = resAllmut.getString("phen_id");
 
             Item item = createItem("Hgmd");
             item.setAttribute("disease", disease);
             item.setAttribute("gene", gene);
+            item.setAttribute("phenId", phenId);
             store(item);
 
         }
