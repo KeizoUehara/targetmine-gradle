@@ -4,14 +4,24 @@
 <classes>
 <!-- add any <class> elements here -->
     <class name="Hgmd" is-interface="true">
-        <attribute name="disease" type="java.lang.String"/>
-        <attribute name="gene" type="java.lang.String"/>
-        <attribute name="phenId" type="java.lang.String"/>
+        <attribute name="identifier" type="java.lang.String"/>
+        <attribute name="description" type="java.lang.String"/>
+        <attribute name="variantClass" type="java.lang.String"/>
+        <reference name="hgmd" referenced-type="SNP" reverse-reference="sNP"/>
+        <collection name="umlses"  referenced-type="UMLSDisease" reverse-reference="hgmds"/>
+        <collection name="publications" referenced-type="Publication" reverse-reference="hgmd"/>
+    </class>
+    <class name="UMLSDisease" is-interface="true">
+        <attribute name="identifier" type="java.lang.String"/>
+        <attribute name="name" type="java.lang.String"/>
+        <collection name="hgmds"  referenced-type="Hgmd" reverse-reference="umlses"/>
     </class>
 
-<!-- add dbsnp <class> elements here -->
     <class name="Gene" is-interface="true">
-        <attribute name="primaryIdentifier" type="java.lang.String"/>
+        <attribute name="briefDescription" type="java.lang.String"/>
+        <attribute name="description" type="java.lang.String"/>
+        <attribute name="type" type="java.lang.String"/>
+        <attribute name="ncbiGeneId" type="java.lang.String"/>
         <collection name="snps" referenced-type="VariationAnnotation" reverse-reference="gene"/>
     </class>
 
@@ -21,9 +31,13 @@
         <attribute name="orientation" type="java.lang.String"/>
         <attribute name="chromosome" type="java.lang.String"/>
         <attribute name="location" type="java.lang.String"/>
+        <collection name="sNP" referenced-type="Hgmd" reverse-reference="hgmd"/>
         <collection name="relatedGenes" referenced-type="VariationAnnotation" reverse-reference="snp"/>
-        <collection name="publications" referenced-type="Publication"/>
-        <collection name="dataSets" referenced-type="DataSet"/>
+        <!--<collection name="dataSets" referenced-type="DataSet"/>-->
+    </class>
+    <class name="Publication" is-interface="true">
+        <attribute name="pubMedId" type="java.lang.String"/>
+        <collection name="hgmd" referenced-type="Hgmd" reverse-reference="publications" />
     </class>
 
     <class name="VariationAnnotation" is-interface="true">
