@@ -10,6 +10,7 @@ package org.intermine.bio.dataconversion;
  *
  */
 
+import org.apache.commons.lang.StringUtils;
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
 import org.intermine.sql.Database;
@@ -55,7 +56,7 @@ public class HgmdConverter extends BioDBConverter
         // TODO: SQL 要確認
         String queryAllmut = "select * from hgmd_pro.allmut " +
                 "LEFT JOIN hgmd_pro.mutnomen ON " +
-                "hgmd_pro.allmut.acc_num = hgmd_pro.mutnomen.acc_num "
+                "hgmd_pro.allmut.acc_num = hgmd_pro.mutnomen.acc_num " +
                 "LEFT JOIN hgmd_phenbase.hgmd_mutation ON " +
                 "hgmd_pro.allmut.acc_num = hgmd_phenbase.hgmd_mutation.acc_num " +
                 "LEFT JOIN hgmd_phenbase.phenotype_concept ON " +
@@ -66,6 +67,7 @@ public class HgmdConverter extends BioDBConverter
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
 
+
             createHgmd(resAllmut);
             createPublication(resAllmut);
 
@@ -73,10 +75,10 @@ public class HgmdConverter extends BioDBConverter
         }
     }
 
-    private void createHgmd(ResultSet response) {
+    private void createHgmd(ResultSet response) throws Exception {
         String identifer = response.getString("acc_num");
-        String describe = resAllmut.getString("descr");
-        String variantClass = resAllmut.getString("tag");
+        String describe = response.getString("descr");
+        String variantClass = response.getString("tag");
 
         Item item = createItem("Hgmd");
         item.setAttribute("identifier", identifer);
@@ -85,7 +87,7 @@ public class HgmdConverter extends BioDBConverter
         store(item);
     }
 
-    private void createPublication(ResultSet response) {
+    private void createPublication(ResultSet response) throws Exception {
         String pubMedId = response.getString("pmid");
 
         Item item = createItem("Publication");
@@ -93,7 +95,7 @@ public class HgmdConverter extends BioDBConverter
         store(item);
     }
 
-    private void createSnp(ResultSet response) {
+    private void createSnp(ResultSet response) throws Exception {
         String identifier = response.getString("dbsnp");
         if(identifier == null || identifier.length() == 0) {
             identifier = response.getString("acc_num");
@@ -105,7 +107,7 @@ public class HgmdConverter extends BioDBConverter
         String location = chromosome + coodStart;
 
         // TODO: データの作り方 要確認 : allmut.hgvsまたはallmut.deletionまたはallmut.insertion
-        String refSnpAllele;
+        String refSnpAllele = "";
         if(response.getString("hgvs") != null && response.getString("hgvs").length() != 0) {
             refSnpAllele = response.getString("hgvs");
         }else if(response.getString("deletion") != null && response.getString("deletion").length() != 0) {
@@ -115,7 +117,7 @@ public class HgmdConverter extends BioDBConverter
         }
 
         // TODO: データの作り方　要確認 :  ?
-        String orientation;
+        String orientation = "";
 
         Item item = createItem("SNP");
         item.setAttribute("identifier", identifier);
@@ -135,7 +137,7 @@ public class HgmdConverter extends BioDBConverter
         store(item);
     }
 
-    private void createGene(ResultSet response) {
+    private void createGene(ResultSet response) throws Exception {
         // refCore
         String refCore = response.getString("refCORE");
         // TODO : refCoreを変換？
