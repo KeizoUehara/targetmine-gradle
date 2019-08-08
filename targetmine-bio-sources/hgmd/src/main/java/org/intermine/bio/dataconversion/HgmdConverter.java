@@ -13,6 +13,7 @@ package org.intermine.bio.dataconversion;
 import org.apache.commons.lang.StringUtils;
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
+import org.intermine.objectstore.ObjectStoreException;
 import org.intermine.sql.Database;
 import org.intermine.xml.full.Item;
 
@@ -20,6 +21,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 
@@ -31,6 +34,8 @@ public class HgmdConverter extends BioDBConverter
     private static final String DATASET_TITLE = "hgmd";
     private static final String DATA_SOURCE_NAME = "hgmd";
 
+    private Map<String, String> geneMap = new HashMap<String, String>();
+    private Map<String, String> publicationMap = new HashMap<String, String>();
 
     /**
      * Construct a new HgmdConverter.
@@ -66,33 +71,43 @@ public class HgmdConverter extends BioDBConverter
                         ";";
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
-
-
             createHgmd(resAllmut);
-            createPublication(resAllmut);
-
+            createSnp(resAllmut);
+            createSnpFunction(resAllmut);
+            createGene(resAllmut);
 
         }
+
+        stmt.close();
+        connection.close();
     }
 
     private void createHgmd(ResultSet response) throws Exception {
-        String identifer = response.getString("acc_num");
-        String describe = response.getString("descr");
+        String identifier = response.getString("acc_num");
+        String description = response.getString("descr");
         String variantClass = response.getString("tag");
 
         Item item = createItem("Hgmd");
-        item.setAttribute("identifier", identifer);
-        item.setAttribute("describe", describe);
+        item.setAttribute("identifier", identifier);
+        item.setAttribute("description", description);
         item.setAttribute("variantClass", variantClass);
+        item.setReference("publications", getPublication(response.getString("pmid")));
+
+
         store(item);
     }
 
-    private void createPublication(ResultSet response) throws Exception {
-        String pubMedId = response.getString("pmid");
+    private String getPublication(String pubMedId) throws ObjectStoreException {
+        String ret = publicationMap.get(pubMedId);
 
-        Item item = createItem("Publication");
-        item.setAttribute("pubMedId", pubMedId);
-        store(item);
+        if (ret == null) {
+            Item item = createItem("Publication");
+            item.setAttribute("pubMedId", pubMedId);
+            store(item);
+            ret = item.getIdentifier();
+            geneMap.put(pubMedId, ret);
+        }
+        return ret;
     }
 
     private void createSnp(ResultSet response) throws Exception {
@@ -101,7 +116,7 @@ public class HgmdConverter extends BioDBConverter
             identifier = response.getString("acc_num");
         }
 
-        String coodStart = response.getString("coordSTART");
+        String coodStart = response.getString("startCoord");
         String chromosome = response.getString("chromosome");
         // TODO: データの作り方 要確認 : allmut.chromosomeとallmut.coordSTART
         String location = chromosome + coodStart;
@@ -137,15 +152,43 @@ public class HgmdConverter extends BioDBConverter
         store(item);
     }
 
-    private void createGene(ResultSet response) throws Exception {
+    private void createSnpFunction(ResultSet response) throws Exception {
+        String name = "";
+        String description = "";
+
+        Item item = createItem("SNPFunction");
+        if (!StringUtils.isEmpty(name)) {
+            item.setAttribute("name", name);
+        }
+        if (!StringUtils.isEmpty(description)) {
+            item.setAttribute("description", description);
+        }
+
+        store(item);
+    }
+
+    private String createGene(ResultSet response) throws Exception {
         // refCore
         String refCore = response.getString("refCORE");
         // TODO : refCoreを変換？
         String ncbiGeneId = refCore;
 
-        Item item = createItem("Gene");
-        item.setAttribute("ncbiGeneId", ncbiGeneId);
-        store(item);
+        // retval : gene.identifier
+        return getGene(ncbiGeneId);
+    }
+
+    private String getGene(String ncbiGeneId) throws ObjectStoreException {
+        String ret = geneMap.get(ncbiGeneId);
+
+        if (ret == null) {
+            Item item = createItem("Gene");
+            item.setAttribute("primaryIdentifier", ncbiGeneId);
+            item.setAttribute("ncbiGeneId", ncbiGeneId);
+            store(item);
+            ret = item.getIdentifier();
+            geneMap.put(ncbiGeneId, ret);
+        }
+        return ret;
     }
 
 //    private String createSNPReference(String mrnaAcc, String mrnaPos, String orientation,
