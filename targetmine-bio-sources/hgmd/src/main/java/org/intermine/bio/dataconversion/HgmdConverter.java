@@ -16,7 +16,8 @@ import org.intermine.metadata.Model;
 import org.intermine.objectstore.ObjectStoreException;
 import org.intermine.sql.Database;
 import org.intermine.xml.full.Item;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,7 +31,7 @@ import java.util.Map;
  */
 public class HgmdConverter extends BioDBConverter
 {
-    private static final Logger LOG = Logger.getLogger(HgmdConverter.class);
+    private static final Logger LOG = LogManager.getLogger(HgmdConverter.class);
     // 
     private static final String DATASET_TITLE = "hgmd";
     private static final String DATA_SOURCE_NAME = "hgmd";
@@ -99,7 +100,7 @@ public class HgmdConverter extends BioDBConverter
     }
 
     private String getPublication(String pubMedId) throws ObjectStoreException {
-        LOG.info("getPublication : " + pubMedId );
+        LOG.warn("getPublication : " + pubMedId );
         String ret = publicationMap.get(pubMedId);
 
         if (ret == null) {
@@ -114,19 +115,19 @@ public class HgmdConverter extends BioDBConverter
     }
 
     private String getSnp(ResultSet response) throws Exception {
-        LOG.info("getSnp : pubMedId ");
+        LOG.warn("getSnp : pubMedId ");
 
 
         String identifier = response.getString("dbsnp");
         if(identifier == null || identifier.length() == 0) {
             identifier = response.getString("acc_num");
-            LOG.info("getSnp : identifier " + identifier);
+            LOG.warn("getSnp : identifier " + identifier);
         }
 
         String coodStart = response.getString("startCoord");
-        LOG.info("getSnp : coodStart " + coodStart);
+        LOG.warn("getSnp : coodStart " + coodStart);
         String chromosome = response.getString("chromosome");
-        LOG.info("getSnp : chromosome " + chromosome);
+        LOG.warn("getSnp : chromosome " + chromosome);
         // TODO: データの作り方 要確認 : allmut.chromosomeとallmut.coordSTART
         String location = chromosome + coodStart;
 
@@ -134,13 +135,13 @@ public class HgmdConverter extends BioDBConverter
         String refSnpAllele = "";
         if(response.getString("hgvs") != null && response.getString("hgvs").length() != 0) {
             refSnpAllele = response.getString("hgvs");
-            LOG.info("getSnp : hgvs refSnpAllele " + refSnpAllele);
+            LOG.warn("getSnp : hgvs refSnpAllele " + refSnpAllele);
         }else if(response.getString("deletion") != null && response.getString("deletion").length() != 0) {
             refSnpAllele = response.getString("deletion");
-            LOG.info("getSnp : deletion refSnpAllele " + refSnpAllele);
+            LOG.warn("getSnp : deletion refSnpAllele " + refSnpAllele);
         }else if(response.getString("insertion") != null && response.getString("insertion").length() != 0) {
             refSnpAllele = response.getString("insertion");
-            LOG.info("getSnp : insertion refSnpAllele " + refSnpAllele);
+            LOG.warn("getSnp : insertion refSnpAllele " + refSnpAllele);
         }
 
         // TODO: データの作り方　要確認 :  ?
@@ -167,7 +168,7 @@ public class HgmdConverter extends BioDBConverter
             ret = item.getIdentifier();
             snpMap.put(identifier, ret);
         }
-        LOG.info("getSnp : ret " + ret);
+        LOG.warn("getSnp : ret " + ret);
         return ret;
     }
 
