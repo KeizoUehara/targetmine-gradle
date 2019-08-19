@@ -35,6 +35,7 @@ public class HgmdConverter extends BioDBConverter
     private static final String DATA_SOURCE_NAME = "hgmd";
 
     private Map<String, String> geneMap = new HashMap<String, String>();
+    private Map<String, String> snpMap = new HashMap<String, String>();
     private Map<String, String> publicationMap = new HashMap<String, String>();
 
     /**
@@ -72,9 +73,8 @@ public class HgmdConverter extends BioDBConverter
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
             createHgmd(resAllmut);
-            createSnp(resAllmut);
-            createSnpFunction(resAllmut);
-            createGene(resAllmut);
+//            createSnpFunction(resAllmut);
+//            createGene(resAllmut);
 
         }
 
@@ -91,8 +91,8 @@ public class HgmdConverter extends BioDBConverter
         item.setAttribute("identifier", identifier);
         item.setAttribute("description", description);
         item.setAttribute("variantClass", variantClass);
-        item.setReference("publications", getPublication(response.getString("pmid")));
-
+        item.addToCollection("publications", getPublication(response.getString("pmid")));
+        item.addToCollection("sNP", getSnp(response));
 
         store(item);
     }
@@ -101,6 +101,7 @@ public class HgmdConverter extends BioDBConverter
         String ret = publicationMap.get(pubMedId);
 
         if (ret == null) {
+            // Publication set only pubMedId.
             Item item = createItem("Publication");
             item.setAttribute("pubMedId", pubMedId);
             store(item);
@@ -110,7 +111,7 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-    private void createSnp(ResultSet response) throws Exception {
+    private String getSnp(ResultSet response) throws Exception {
         String identifier = response.getString("dbsnp");
         if(identifier == null || identifier.length() == 0) {
             identifier = response.getString("acc_num");
@@ -134,22 +135,28 @@ public class HgmdConverter extends BioDBConverter
         // TODO: データの作り方　要確認 :  ?
         String orientation = "";
 
-        Item item = createItem("SNP");
-        item.setAttribute("identifier", identifier);
-        if (!StringUtils.isEmpty(location)) {
-            item.setAttribute("location", location);
-        }
-        if (!StringUtils.isEmpty(chromosome)) {
-            item.setAttribute("chromosome", chromosome);
-        }
-        if (!StringUtils.isEmpty(refSnpAllele)) {
-            item.setAttribute("refSnpAllele", refSnpAllele);
-        }
-        if (!StringUtils.isEmpty(orientation)) {
-            item.setAttribute("orientation", orientation);
-        }
+        String ret = snpMap.get(identifier);
+        if (ret == null) {
+            Item item = createItem("SNP");
+            item.setAttribute("identifier", identifier);
+            if (!StringUtils.isEmpty(location)) {
+                item.setAttribute("location", location);
+            }
+            if (!StringUtils.isEmpty(chromosome)) {
+                item.setAttribute("chromosome", chromosome);
+            }
+            if (!StringUtils.isEmpty(refSnpAllele)) {
+                item.setAttribute("refSnpAllele", refSnpAllele);
+            }
+            if (!StringUtils.isEmpty(orientation)) {
+                item.setAttribute("orientation", orientation);
+            }
 
-        store(item);
+            store(item);
+            ret = item.getIdentifier();
+            snpMap.put(identifier, ret);
+        }
+        return ret;
     }
 
     private void createSnpFunction(ResultSet response) throws Exception {
