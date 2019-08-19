@@ -7,7 +7,7 @@
         <attribute name="identifier" type="java.lang.String"/>
         <attribute name="description" type="java.lang.String"/>
         <attribute name="variantClass" type="java.lang.String"/>
-        <reference name="hgmd" referenced-type="SNP" reverse-reference="sNP"/>
+        <collection name="sNP" referenced-type="SNP" reverse-reference="hgmd"/>
         <collection name="umlses"  referenced-type="UMLSDisease" reverse-reference="hgmds"/>
         <collection name="publications" referenced-type="Publication" reverse-reference="hgmd"/>
     </class>
@@ -31,7 +31,7 @@
         <attribute name="orientation" type="java.lang.String"/>
         <attribute name="chromosome" type="java.lang.String"/>
         <attribute name="location" type="java.lang.String"/>
-        <collection name="sNP" referenced-type="Hgmd" reverse-reference="hgmd"/>
+        <reference name="hgmd" referenced-type="Hgmd" reverse-reference="sNP"/>
         <collection name="relatedGenes" referenced-type="VariationAnnotation" reverse-reference="snp"/>
         <!--<collection name="dataSets" referenced-type="DataSet"/>-->
     </class>
