@@ -37,7 +37,7 @@
     </class>
     <class name="Publication" is-interface="true">
         <attribute name="pubMedId" type="java.lang.String"/>
-        <collection name="hgmd" referenced-type="Hgmd" reverse-reference="publications" />
+        <reference name="hgmd" referenced-type="Hgmd" reverse-reference="publications" />
     </class>
 
     <class name="VariationAnnotation" is-interface="true">
