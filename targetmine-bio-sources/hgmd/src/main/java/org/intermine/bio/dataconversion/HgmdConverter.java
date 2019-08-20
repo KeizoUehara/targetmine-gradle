@@ -13,7 +13,11 @@ package org.intermine.bio.dataconversion;
 import org.apache.commons.lang.StringUtils;
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
+import org.intermine.model.InterMineObject;
+import org.intermine.objectstore.ObjectStore;
 import org.intermine.objectstore.ObjectStoreException;
+import org.intermine.objectstore.ObjectStoreFactory;
+import org.intermine.objectstore.query.*;
 import org.intermine.sql.Database;
 import org.intermine.xml.full.Item;
 import org.apache.logging.log4j.LogManager;
@@ -22,8 +26,7 @@ import org.apache.logging.log4j.Logger;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 
@@ -40,6 +43,9 @@ public class HgmdConverter extends BioDBConverter
     private Map<String, String> snpMap = new HashMap<String, String>();
     private Map<String, String> publicationMap = new HashMap<String, String>();
 
+    private String osAlias = null;
+    private Map<String, String> snpFunctionNameMap = new HashMap<String, String>();
+
     /**
      * Construct a new HgmdConverter.
      * @param database the database to read from
@@ -55,6 +61,8 @@ public class HgmdConverter extends BioDBConverter
      * {@inheritDoc}
      */
     public void process() throws Exception {
+        getSnpFunctionNames();
+
         // a database has been initialised from properties starting with db.hgmd
 
         Connection connection = getDatabase().getConnection();
@@ -115,13 +123,11 @@ public class HgmdConverter extends BioDBConverter
     }
 
     private String getSnp(ResultSet response) throws Exception {
-        LOG.warn("getSnp : pubMedId ");
-
-
         String identifier = response.getString("dbsnp");
+        LOG.warn("getSnp : dbsnp identifier " + identifier);
         if(identifier == null || identifier.length() == 0) {
             identifier = response.getString("acc_num");
-            LOG.warn("getSnp : identifier " + identifier);
+            LOG.warn("getSnp : accnum identifier " + identifier);
         }
 
         String coodStart = response.getString("startCoord");
@@ -170,6 +176,42 @@ public class HgmdConverter extends BioDBConverter
         }
         LOG.warn("getSnp : ret " + ret);
         return ret;
+    }
+
+    /**
+     * DB read SNPFunction column "identifer" and "name".
+     * @throws Exception
+     */
+    private void getSnpFunctionNames() throws Exception {
+        LOG.info("Start loading snpfunction name");
+        ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
+
+        Query q = new Query();
+        QueryClass qcSnpFunction = new QueryClass(os.getModel().
+                getClassDescriptorByName("SNPFunction").getType());
+
+        q.addFrom(qcSnpFunction);
+        q.addToSelect(qcSnpFunction);
+
+        Results results = os.execute(q);
+        Iterator<Object> iterator = results.iterator();
+
+        while (iterator.hasNext()) {
+            ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
+            InterMineObject p = rr.get(0);
+
+            String identifier = (String) p.getFieldValue("identifier");
+            String name = (String) p.getFieldValue("name");
+
+            LOG.info("loaded snpFunction { identifer :"+ identifier + " , name : " + name + "}" );
+
+            if (identifier != null && name != null) {
+                if (snpFunctionNameMap.get(name) == null) {
+                    snpFunctionNameMap.put(name, identifier);
+                }
+            }
+            LOG.info("loaded "+ snpFunctionNameMap.size()+" snpFunction (size)" );
+        }
     }
 
     private void createSnpFunction(ResultSet response) throws Exception {
@@ -252,5 +294,9 @@ public class HgmdConverter extends BioDBConverter
     @Override
     public String getDataSetTitle(String taxonId) {
         return DATASET_TITLE;
+    }
+
+    public void setOsAlias(String osAlias) {
+        this.osAlias = osAlias;
     }
 }
