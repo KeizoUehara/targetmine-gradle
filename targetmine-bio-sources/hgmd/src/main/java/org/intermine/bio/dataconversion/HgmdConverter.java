@@ -200,14 +200,14 @@ public class HgmdConverter extends BioDBConverter
             ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
             InterMineObject p = rr.get(0);
 
-            String identifier = (String) p.getFieldValue("identifier");
+            String id = (String) p.getFieldValue("id");
             String name = (String) p.getFieldValue("name");
 
-            LOG.info("loaded snpFunction { identifer :"+ identifier + " , name : " + name + "}" );
+            LOG.info("loaded snpFunction { id :"+ id + " , name : " + name + "}" );
 
-            if (identifier != null && name != null) {
+            if (id != null && name != null) {
                 if (snpFunctionNameMap.get(name) == null) {
-                    snpFunctionNameMap.put(name, identifier);
+                    snpFunctionNameMap.put(name, id);
                 }
             }
             LOG.info("loaded "+ snpFunctionNameMap.size()+" snpFunction (size)" );
