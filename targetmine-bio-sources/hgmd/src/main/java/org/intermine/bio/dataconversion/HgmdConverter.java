@@ -44,7 +44,7 @@ public class HgmdConverter extends BioDBConverter
     private Map<String, String> publicationMap = new HashMap<String, String>();
 
     private String osAlias = null;
-    private Map<String, String> snpFunctionNameMap = new HashMap<String, String>();
+    private Map<String, Integer> snpFunctionNameMap = new HashMap<String, Integer>();
 
     /**
      * Construct a new HgmdConverter.
@@ -196,11 +196,15 @@ public class HgmdConverter extends BioDBConverter
         Results results = os.execute(q);
         Iterator<Object> iterator = results.iterator();
 
+        LOG.info("iterator before" );
         while (iterator.hasNext()) {
+            LOG.info("iterator start" );
             ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
             InterMineObject p = rr.get(0);
 
-            String id = (String) p.getFieldValue("id");
+            LOG.info("InterMineObject { p :"+ p + "}" );
+
+            Integer id = (Integer) p.getFieldValue("id");
             String name = (String) p.getFieldValue("name");
 
             LOG.info("loaded snpFunction { id :"+ id + " , name : " + name + "}" );
