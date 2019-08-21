@@ -11,7 +11,6 @@ package org.intermine.bio.dataconversion;
  */
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
 import org.intermine.model.InterMineObject;
@@ -47,7 +46,8 @@ public class HgmdConverter extends BioDBConverter
     private Map<String, String> publicationMap = new HashMap<String, String>();
 
     private String osAlias = null;
-    private Map<String, Integer> snpFunctionNameMap = new HashMap<String, Integer>();
+    private Map<String, String> snpFunctionNameMap = new HashMap<String, String>();
+    private Set<String> snpFunctionNameSet = new HashSet<String>();
 
     private static Map<String, String> mutypeToSnpFunctionNames = new HashMap<String, String>();
     static {
@@ -97,7 +97,8 @@ public class HgmdConverter extends BioDBConverter
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
             createHgmd(resAllmut);
-            createSnpFunction(resAllmut);
+            String snpFunctionIdentifer = getOrCreateSnpFunction(resAllmut);
+            LOG.info("snpFunctionIdentifer : " + snpFunctionIdentifer );
 //            createGene(resAllmut);
 
         }
@@ -131,6 +132,7 @@ public class HgmdConverter extends BioDBConverter
             item.setAttribute("pubMedId", pubMedId);
             store(item);
             ret = item.getIdentifier();
+            LOG.warn(" getPublication : pubmedid = "+ pubMedId +"publication identifer " + ret);
             geneMap.put(pubMedId, ret);
         }
         return ret;
@@ -217,47 +219,44 @@ public class HgmdConverter extends BioDBConverter
             InterMineObject p = rr.get(0);
 
             LOG.info("InterMineObject { p :"+ p + "}" );
-
-            Integer id = (Integer) p.getFieldValue("id");
             String name = (String) p.getFieldValue("name");
+            LOG.info(" loaded snpFunction { name : " + name + "}" );
 
-            LOG.info("loaded snpFunction { id :"+ id + " , name : " + name + "}" );
-
-            if (id != null && name != null) {
-                if (snpFunctionNameMap.get(name) == null) {
-                    snpFunctionNameMap.put(name, id);
-                }
+            if (name != null) {
+                snpFunctionNameSet.add(name);
             }
         }
         LOG.info("loaded "+ snpFunctionNameMap.size()+" snpFunction (size)" );
     }
 
-    private void createSnpFunction(ResultSet response) throws Exception {
+    private String getOrCreateSnpFunction(ResultSet response) throws Exception {
         String mutype = response.getString("mutype");
+
+        if(StringUtils.isEmpty(mutype)) {
+            LOG.info("SNPFunction is Emptiy.");
+            return "";
+        }
+
+        // mapping mutype -> snpfunction name.
         String snpFunctionName = mutypeToSnpFunctionNames.get(mutype);
         if(snpFunctionName == null) {
+            // not mapping. use mutype.
             snpFunctionName = mutype;
         }
 
-        if(StringUtils.isEmpty(snpFunctionName)) {
-            LOG.info("SNPFunction is Emptiy.");
-            return;
-        }
-
-        if(snpFunctionNameMap.containsKey(snpFunctionName)) {
-            // get id.
-            Integer id = snpFunctionNameMap.get(snpFunctionName);
-            LOG.info("not add SNPFunction. get related id = " + id);
-        } else {
+        String ret = snpFunctionNameMap.get(snpFunctionName);
+        if(ret == null) {
             // create item.
             Item item = createItem("SNPFunction");
             item.setAttribute("name", snpFunctionName);
             store(item);
-            LOG.info("create SNPFunction! item identifier = " + item.getIdentifier());
-            snpFunctionNameMap.put(snpFunctionName, NumberUtils.toInt(item.getIdentifier()));
-
+            ret = item.getIdentifier();
+            LOG.info(" create SNPFunction! name = "+ snpFunctionName + "item identifier = " + ret);
+            snpFunctionNameMap.put(snpFunctionName, item.getIdentifier());
         }
 
+        LOG.info(" snpfunction() end. getIdentifier = " + ret);
+        return ret;
     }
 
     private String createGene(ResultSet response) throws Exception {
