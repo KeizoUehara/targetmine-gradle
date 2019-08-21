@@ -11,6 +11,7 @@ package org.intermine.bio.dataconversion;
  */
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
 import org.intermine.model.InterMineObject;
@@ -253,6 +254,7 @@ public class HgmdConverter extends BioDBConverter
             item.setAttribute("name", snpFunctionName);
             store(item);
             LOG.info("create SNPFunction! item identifier = " + item.getIdentifier());
+            snpFunctionNameMap.put(snpFunctionName, NumberUtils.toInt(item.getIdentifier()));
 
         }
 
