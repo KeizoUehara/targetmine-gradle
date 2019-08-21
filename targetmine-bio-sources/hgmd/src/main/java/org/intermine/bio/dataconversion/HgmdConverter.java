@@ -29,7 +29,9 @@ import java.sql.Statement;
 import java.util.*;
 
 /**
- * 
+ * Integrate dbsnp in advance.
+ * Read hgmd database in mysql.
+ * mysql db setting wrote '~/.intermine/targetmine.properties'.
  * @author
  */
 public class HgmdConverter extends BioDBConverter
@@ -45,6 +47,17 @@ public class HgmdConverter extends BioDBConverter
 
     private String osAlias = null;
     private Map<String, Integer> snpFunctionNameMap = new HashMap<String, Integer>();
+
+    private static Map<String, String> mutypeToSnpFunctionNames = new HashMap<String, String>();
+    static {
+        Map<String, String> p = new HashMap<>();
+        // key:hgmd_pro.allmut.mutype , value:snpfunction.name
+        mutypeToSnpFunctionNames.put("frameshift", "frameshift");
+        mutypeToSnpFunctionNames.put("missense", "missense");
+        mutypeToSnpFunctionNames.put("nonsense", "STOP-GAIN");
+        mutypeToSnpFunctionNames.put("nonstop", "STOP-LOSS");
+        mutypeToSnpFunctionNames.put("synonymous", "cds-synon");
+    }
 
     /**
      * Construct a new HgmdConverter.
@@ -78,12 +91,12 @@ public class HgmdConverter extends BioDBConverter
                 "LEFT JOIN hgmd_phenbase.phenotype_concept ON " +
                 "hgmd_phenbase.hgmd_mutation.phen_id = hgmd_phenbase.phenotype_concept.phen_id " +
                 // TODO : debug
-                "limit 5 " +
+                "limit 10 " +
                         ";";
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
             createHgmd(resAllmut);
-//            createSnpFunction(resAllmut);
+            createSnpFunction(resAllmut);
 //            createGene(resAllmut);
 
         }
@@ -179,7 +192,7 @@ public class HgmdConverter extends BioDBConverter
     }
 
     /**
-     * DB read SNPFunction column "identifer" and "name".
+     * DB read SNPFunction column "id" and "name".
      * @throws Exception
      */
     private void getSnpFunctionNames() throws Exception {
@@ -214,23 +227,35 @@ public class HgmdConverter extends BioDBConverter
                     snpFunctionNameMap.put(name, id);
                 }
             }
-            LOG.info("loaded "+ snpFunctionNameMap.size()+" snpFunction (size)" );
         }
+        LOG.info("loaded "+ snpFunctionNameMap.size()+" snpFunction (size)" );
     }
 
     private void createSnpFunction(ResultSet response) throws Exception {
-        String name = "";
-        String description = "";
-
-        Item item = createItem("SNPFunction");
-        if (!StringUtils.isEmpty(name)) {
-            item.setAttribute("name", name);
-        }
-        if (!StringUtils.isEmpty(description)) {
-            item.setAttribute("description", description);
+        String mutype = response.getString("mutype");
+        String snpFunctionName = mutypeToSnpFunctionNames.get(mutype);
+        if(snpFunctionName == null) {
+            snpFunctionName = mutype;
         }
 
-        store(item);
+        if(StringUtils.isEmpty(snpFunctionName)) {
+            LOG.info("SNPFunction is Emptiy.");
+            return;
+        }
+
+        if(snpFunctionNameMap.containsKey(snpFunctionName)) {
+            // get id.
+            Integer id = snpFunctionNameMap.get(snpFunctionName);
+            LOG.info("not add SNPFunction. get related id = " + id);
+        } else {
+            // create item.
+            Item item = createItem("SNPFunction");
+            item.setAttribute("name", snpFunctionName);
+            store(item);
+            LOG.info("create SNPFunction! item identifier = " + item.getIdentifier());
+
+        }
+
     }
 
     private String createGene(ResultSet response) throws Exception {
