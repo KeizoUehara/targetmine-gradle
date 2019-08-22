@@ -121,13 +121,15 @@ public class HgmdConverter extends BioDBConverter
         item.setAttribute("identifier", identifier);
         item.setAttribute("description", description);
         item.setAttribute("variantClass", variantClass);
-        item.addToCollection("publications", getPublication(response.getString("pmid")));
-        item.addToCollection("sNP", getSnp(response));
         item.addToCollection("umlses", getUmlses(response));
         store(item);
+        String hgmdId = item.getIdentifier();
+
+        getPublication(response.getString("pmid"), hgmdId);
+        getSnp(response, hgmdId);
     }
 
-    private String getPublication(String pubMedId) throws ObjectStoreException {
+    private String getPublication(String pubMedId, String hgmdId) throws ObjectStoreException {
         LOG.warn("getPublication : " + pubMedId );
         String ret = publicationMap.get(pubMedId);
 
@@ -135,6 +137,7 @@ public class HgmdConverter extends BioDBConverter
             // Publication set only pubMedId.
             Item item = createItem("Publication");
             item.setAttribute("pubMedId", pubMedId);
+            item.setReference("hgmd", hgmdId);
             store(item);
             ret = item.getIdentifier();
             LOG.warn(" getPublication : pubmedid = "+ pubMedId +"publication identifer " + ret);
@@ -143,7 +146,7 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-    private String getSnp(ResultSet response) throws Exception {
+    private String getSnp(ResultSet response, String hgmdId) throws Exception {
         String identifier = response.getString("dbsnp");
         LOG.warn("getSnp : dbsnp identifier " + identifier);
         if(StringUtils.isEmpty(identifier)) {
@@ -197,6 +200,7 @@ public class HgmdConverter extends BioDBConverter
                     item.setAttribute("orientation", orientation);
                 }
             }
+            item.setReference("hgmd", hgmdId);
             store(item);
             ret = item.getIdentifier();
             snpMap.put(identifier, ret);
@@ -207,6 +211,9 @@ public class HgmdConverter extends BioDBConverter
     }
 
     private String getUmlses(ResultSet response) throws Exception {
+        // hgmd acc_num
+        String acc_num = "";
+
         String cui = response.getString("cui");
         LOG.warn("getUmlses : cui " + cui);
 
