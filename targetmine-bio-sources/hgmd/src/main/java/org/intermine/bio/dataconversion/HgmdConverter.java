@@ -46,6 +46,9 @@ public class HgmdConverter extends BioDBConverter
     private Map<String, String> publicationMap = new HashMap<String, String>();
 
     private String osAlias = null;
+
+    private Set<String> snpIdSet = new HashSet<String>();
+
     private Map<String, String> snpFunctionNameMap = new HashMap<String, String>();
     private Set<String> snpFunctionNameSet = new HashSet<String>();
 
@@ -75,6 +78,7 @@ public class HgmdConverter extends BioDBConverter
      * {@inheritDoc}
      */
     public void process() throws Exception {
+        getSnpIds();
         getSnpFunctionNames();
 
         // a database has been initialised from properties starting with db.hgmd
@@ -119,7 +123,7 @@ public class HgmdConverter extends BioDBConverter
         item.setAttribute("variantClass", variantClass);
         item.addToCollection("publications", getPublication(response.getString("pmid")));
         item.addToCollection("sNP", getSnp(response));
-
+        item.addToCollection("umlses", getUmlses(response));
         store(item);
     }
 
@@ -142,57 +146,103 @@ public class HgmdConverter extends BioDBConverter
     private String getSnp(ResultSet response) throws Exception {
         String identifier = response.getString("dbsnp");
         LOG.warn("getSnp : dbsnp identifier " + identifier);
-        if(identifier == null || identifier.length() == 0) {
+        if(StringUtils.isEmpty(identifier)) {
             identifier = response.getString("acc_num");
             LOG.warn("getSnp : accnum identifier " + identifier);
         }
 
-        String coodStart = response.getString("startCoord");
-        LOG.warn("getSnp : coodStart " + coodStart);
-        String chromosome = response.getString("chromosome");
-        LOG.warn("getSnp : chromosome " + chromosome);
-        // TODO: データの作り方 要確認 : allmut.chromosomeとallmut.coordSTART
-        String location = chromosome + coodStart;
-
-        // TODO: データの作り方 要確認 : allmut.hgvsまたはallmut.deletionまたはallmut.insertion
-        String refSnpAllele = "";
-        if(response.getString("hgvs") != null && response.getString("hgvs").length() != 0) {
-            refSnpAllele = response.getString("hgvs");
-            LOG.warn("getSnp : hgvs refSnpAllele " + refSnpAllele);
-        }else if(response.getString("deletion") != null && response.getString("deletion").length() != 0) {
-            refSnpAllele = response.getString("deletion");
-            LOG.warn("getSnp : deletion refSnpAllele " + refSnpAllele);
-        }else if(response.getString("insertion") != null && response.getString("insertion").length() != 0) {
-            refSnpAllele = response.getString("insertion");
-            LOG.warn("getSnp : insertion refSnpAllele " + refSnpAllele);
-        }
-
-        // TODO: データの作り方　要確認 :  ?
-        String orientation = "";
-
         String ret = snpMap.get(identifier);
-        if (ret == null) {
-            Item item = createItem("SNP");
-            item.setAttribute("identifier", identifier);
-            if (!StringUtils.isEmpty(location)) {
-                item.setAttribute("location", location);
-            }
-            if (!StringUtils.isEmpty(chromosome)) {
-                item.setAttribute("chromosome", chromosome);
-            }
-            if (!StringUtils.isEmpty(refSnpAllele)) {
-                item.setAttribute("refSnpAllele", refSnpAllele);
-            }
-            if (!StringUtils.isEmpty(orientation)) {
-                item.setAttribute("orientation", orientation);
-            }
 
+        if(ret == null) {
+            Item item = createItem("SNP");
+
+            // hgmd にdbsnpのIDが入っていればSNP にリンクを張る。
+            if(snpIdSet.contains(identifier)) {
+                // itemへのstore後のidを取得したいため、identifierのみ設定
+                item.setAttribute("identifier", identifier);
+            } else {
+                // 無い場合はhgmdのデータを利用してSNPの情報を埋める
+                String coodStart = response.getString("startCoord");
+                String chromosome = response.getString("chromosome");
+                // TODO: データの作り方 要確認 : allmut.chromosomeとallmut.coordSTART
+                String location = chromosome + ":" + coodStart;
+                // TODO: データの作り方 要確認 : allmut.hgvsまたはallmut.deletionまたはallmut.insertion
+                String refSnpAllele = "";
+                if(response.getString("hgvs") != null && response.getString("hgvs").length() != 0) {
+                    refSnpAllele = response.getString("hgvs");
+                    LOG.warn("getSnp : hgvs refSnpAllele " + refSnpAllele);
+                }else if(response.getString("deletion") != null && response.getString("deletion").length() != 0) {
+                    refSnpAllele = response.getString("deletion");
+                    LOG.warn("getSnp : deletion refSnpAllele " + refSnpAllele);
+                }else if(response.getString("insertion") != null && response.getString("insertion").length() != 0) {
+                    refSnpAllele = response.getString("insertion");
+                    LOG.warn("getSnp : insertion refSnpAllele " + refSnpAllele);
+                }
+                LOG.warn("getSnp : coodStart " + coodStart);
+                LOG.warn("getSnp : chromosome " + chromosome);
+                // TODO: データの作り方　要確認 :  ?
+                String orientation = "";
+
+                item.setAttribute("identifier", identifier);
+                if (!StringUtils.isEmpty(location)) {
+                    item.setAttribute("location", location);
+                }
+                if (!StringUtils.isEmpty(chromosome)) {
+                    item.setAttribute("chromosome", chromosome);
+                }
+                if (!StringUtils.isEmpty(refSnpAllele)) {
+                    item.setAttribute("refSnpAllele", refSnpAllele);
+                }
+                if (!StringUtils.isEmpty(orientation)) {
+                    item.setAttribute("orientation", orientation);
+                }
+            }
             store(item);
             ret = item.getIdentifier();
             snpMap.put(identifier, ret);
         }
+
         LOG.warn("getSnp : ret " + ret);
         return ret;
+    }
+
+    private String getUmlses(ResultSet response) throws Exception {
+        String cui = response.getString("cui");
+        LOG.warn("getUmlses : cui " + cui);
+
+        // Publication set only pubMedId.
+        Item item = createItem("UMLSDisease");
+        item.setAttribute("identifier", cui);
+        store(item);
+        LOG.warn(" getUmlses : identifier = "+ cui);
+        return item.getIdentifier();
+    }
+
+    /**
+     * DB read SNP column "identifier".
+     * @throws Exception
+     */
+    private void getSnpIds() throws Exception {
+        LOG.info("Start loading snp identifiers");
+        ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
+
+        Query q = new Query();
+        QueryClass qcSnp = new QueryClass(os.getModel().
+                getClassDescriptorByName("SNP").getType());
+        QueryField qfSnpId = new QueryField(qcSnp, "identifier");
+        q.addFrom(qcSnp);
+        q.addToSelect(qfSnpId);
+
+        Results results = os.execute(q);
+        Iterator<Object> iterator = results.iterator();
+
+        LOG.info("SNP iterator before" );
+        while (iterator.hasNext()) {
+            ResultsRow<String> rr = (ResultsRow<String>) iterator.next();
+            snpIdSet.add(rr.get(0));
+            LOG.info(" loaded snp { id : " + rr.get(0) + "}" );
+        }
+        LOG.info("loaded "+ snpIdSet.size()+" SNP (size)" );
     }
 
     /**
@@ -285,15 +335,15 @@ public class HgmdConverter extends BioDBConverter
     }
 
     private String getSNPReference(ResultSet response, String snpFunctionRef, String variationAnnotationRef) throws Exception {
-        String mrnaAcc = response.getString("refCORE") + response.getString("refVER"); // TODO: 文字列結合の方法?
+        String mrnaAcc = response.getString("refCORE") + "." + response.getString("refVER"); // TODO: 文字列結合の方法?
         String mrnaPos = response.getString("cSTART");
 
         String orientation = ""; // TODO: データの作り方?
-        String allele = response.getString("wildBASE") + response.getString("mutBASE"); // TODO: 文字列結合の方法?
+        String allele = response.getString("wildBASE") + " -> " + response.getString("mutBASE"); // TODO: 文字列結合の方法?
         String codon = ""; // TODO: データの作り方?
-        String proteinAcc = response.getString("protCORE") + response.getString("protVER"); // TODO: 文字列結合の方法?
+        String proteinAcc = response.getString("protCORE") + "." + response.getString("protVER"); // TODO: 文字列結合の方法?
         int aaPos = response.getInt("codon");
-        String residue = response.getString("wildAMINO")  +  response.getString("mutAMINO"); // TODO: 文字列結合の方法?
+        String residue = response.getString("wildAMINO") + " -> " +  response.getString("mutAMINO"); // TODO: 文字列結合の方法?
         String funcRef = snpFunctionRef;
         String vaItemRef = variationAnnotationRef;
 
