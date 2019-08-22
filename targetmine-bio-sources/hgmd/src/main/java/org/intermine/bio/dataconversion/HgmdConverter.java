@@ -99,6 +99,7 @@ public class HgmdConverter extends BioDBConverter
             createHgmd(resAllmut);
             String snpFunctionIdentifer = getOrCreateSnpFunction(resAllmut);
             LOG.info("snpFunctionIdentifer : " + snpFunctionIdentifer );
+            getSNPReference(resAllmut, snpFunctionIdentifer, "");
 //            createGene(resAllmut);
 
         }
@@ -195,7 +196,7 @@ public class HgmdConverter extends BioDBConverter
     }
 
     /**
-     * DB read SNPFunction column "id" and "name".
+     * DB read SNPFunction column "name".
      * @throws Exception
      */
     private void getSnpFunctionNames() throws Exception {
@@ -226,7 +227,7 @@ public class HgmdConverter extends BioDBConverter
                 snpFunctionNameSet.add(name);
             }
         }
-        LOG.info("loaded "+ snpFunctionNameMap.size()+" snpFunction (size)" );
+        LOG.info("loaded "+ snpFunctionNameSet.size()+" snpFunction (size)" );
     }
 
     private String getOrCreateSnpFunction(ResultSet response) throws Exception {
@@ -283,40 +284,56 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-//    private String createSNPReference(String mrnaAcc, String mrnaPos, String orientation,
-//                                      String allele, String codon, String proteinAcc, int aaPos, String residue,
-//                                      String funcRef, String vaItemRef) throws ObjectStoreException {
-//        Item item = createItem("SNPReference");
-//        item.setAttribute("mrnaAccession", mrnaAcc);
-//        if (!StringUtils.isEmpty(mrnaPos)) {
-//            item.setAttribute("mrnaPosition", mrnaPos);
-//        }
-//        if (!StringUtils.isEmpty(orientation)) {
-//            item.setAttribute("orientation", orientation);
-//        }
-//        if (!StringUtils.isEmpty(allele)) {
-//            item.setAttribute("mrnaAllele", allele);
-//        }
-//        if (!StringUtils.isEmpty(codon)) {
-//            item.setAttribute("mrnaCodon", codon);
-//        }
-//        if (!StringUtils.isEmpty(proteinAcc)) {
-//            item.setAttribute("proteinAccession", proteinAcc);
-//        }
-//        if (aaPos > 0) {
-//            item.setAttribute("proteinPosition", String.valueOf(aaPos));
-//        }
-//        if (!StringUtils.isEmpty(residue)) {
-//            item.setAttribute("residue", residue);
-//        }
-//        if (funcRef != null) {
-//            item.setReference("function", funcRef);
-//        }
-//        item.setReference("annotation", vaItemRef);
-//        store(item);
-//
-//        return item.getIdentifier();
-//    }
+    private String getSNPReference(ResultSet response, String snpFunctionRef, String variationAnnotationRef) throws Exception {
+        String mrnaAcc = response.getString("refCORE") + response.getString("refVER"); // TODO: 文字列結合の方法?
+        String mrnaPos = response.getString("cSTART");
+
+        String orientation = ""; // TODO: データの作り方?
+        String allele = response.getString("wildBASE") + response.getString("mutBASE"); // TODO: 文字列結合の方法?
+        String codon = ""; // TODO: データの作り方?
+        String proteinAcc = response.getString("protCORE") + response.getString("protVER"); // TODO: 文字列結合の方法?
+        int aaPos = response.getInt("codon");
+        String residue = response.getString("wildAMINO")  +  response.getString("mutAMINO"); // TODO: 文字列結合の方法?
+        String funcRef = snpFunctionRef;
+        String vaItemRef = variationAnnotationRef;
+
+        return createSNPReference(mrnaAcc, mrnaPos, orientation, allele, codon, proteinAcc, aaPos, residue, funcRef, vaItemRef);
+    }
+
+    private String createSNPReference(String mrnaAcc, String mrnaPos, String orientation,
+                                      String allele, String codon, String proteinAcc, int aaPos, String residue,
+                                      String funcRef, String vaItemRef) throws ObjectStoreException {
+        Item item = createItem("SNPReference");
+        item.setAttribute("mrnaAccession", mrnaAcc);
+        if (!StringUtils.isEmpty(mrnaPos)) {
+            item.setAttribute("mrnaPosition", mrnaPos);
+        }
+        if (!StringUtils.isEmpty(orientation)) {
+            item.setAttribute("orientation", orientation);
+        }
+        if (!StringUtils.isEmpty(allele)) {
+            item.setAttribute("mrnaAllele", allele);
+        }
+        if (!StringUtils.isEmpty(codon)) {
+            item.setAttribute("mrnaCodon", codon);
+        }
+        if (!StringUtils.isEmpty(proteinAcc)) {
+            item.setAttribute("proteinAccession", proteinAcc);
+        }
+        if (aaPos > 0) {
+            item.setAttribute("proteinPosition", String.valueOf(aaPos));
+        }
+        if (!StringUtils.isEmpty(residue)) {
+            item.setAttribute("residue", residue);
+        }
+        if (funcRef != null) {
+            item.setReference("function", funcRef);
+        }
+        item.setReference("annotation", vaItemRef);
+        store(item);
+
+        return item.getIdentifier();
+    }
 
     /**
      * {@inheritDoc}
