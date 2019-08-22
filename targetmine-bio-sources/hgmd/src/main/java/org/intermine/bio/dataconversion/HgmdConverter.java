@@ -329,7 +329,10 @@ public class HgmdConverter extends BioDBConverter
         if (funcRef != null) {
             item.setReference("function", funcRef);
         }
-        item.setReference("annotation", vaItemRef);
+        if (vaItemRef != null) {
+            item.setReference("annotation", vaItemRef);
+        }
+
         store(item);
 
         return item.getIdentifier();
