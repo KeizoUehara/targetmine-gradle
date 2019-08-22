@@ -326,10 +326,10 @@ public class HgmdConverter extends BioDBConverter
         if (!StringUtils.isEmpty(residue)) {
             item.setAttribute("residue", residue);
         }
-        if (funcRef != null) {
+        if (!StringUtils.isEmpty(funcRef)) {
             item.setReference("function", funcRef);
         }
-        if (vaItemRef != null) {
+        if (!StringUtils.isEmpty(vaItemRef)) {
             item.setReference("annotation", vaItemRef);
         }
 
