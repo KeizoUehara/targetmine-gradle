@@ -12,6 +12,7 @@ package org.intermine.bio.dataconversion;
 
 import org.apache.commons.lang.StringUtils;
 import org.intermine.dataconversion.ItemWriter;
+import org.intermine.metadata.ConstraintOp;
 import org.intermine.metadata.Model;
 import org.intermine.model.InterMineObject;
 import org.intermine.objectstore.ObjectStore;
@@ -100,11 +101,31 @@ public class HgmdConverter extends BioDBConverter
                         ";";
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
-            createHgmd(resAllmut);
-            String snpFunctionIdentifer = getOrCreateSnpFunction(resAllmut);
-            LOG.info("snpFunctionIdentifer : " + snpFunctionIdentifer );
-            getSNPReference(resAllmut, snpFunctionIdentifer, "");
-//            createGene(resAllmut);
+            // hgmd data input. return hgmd id.
+            String hgmdId = createHgmd(resAllmut);
+            // publication data input & reference hgmd.
+            getPublication(resAllmut, hgmdId);
+            // snp data input & reference hgmd. return snpId.
+            String snpId = getSnp(resAllmut, hgmdId);
+
+            boolean isSnpContainsHgmdDbSnp = false;
+            // if hgmd cntains dbsnp, only set reference snpid. else set snp and other data.
+            if(!isSnpContainsHgmdDbSnp) {
+                // SNPFunction data input. return SNPFunctionId.
+                String snpFunctionId = getOrCreateSnpFunction(resAllmut);
+                LOG.info("snpFunctionId : " + snpFunctionId );
+
+                // get GeneId.
+                getGene(resAllmut);
+
+                // VariationAnnotaition data input & reference geneId, SNPFunctionId, SNPId. return VariationAnnotation id.
+                String variationAnnotationId = "";
+
+                // SNPReference data input & get SNPReference identifier.
+                getSNPReference(resAllmut, snpFunctionId, "");
+
+
+            }
 
         }
 
@@ -112,7 +133,7 @@ public class HgmdConverter extends BioDBConverter
         connection.close();
     }
 
-    private void createHgmd(ResultSet response) throws Exception {
+    private String createHgmd(ResultSet response) throws Exception {
         String identifier = response.getString("acc_num");
         String description = response.getString("descr");
         String variantClass = response.getString("tag");
@@ -124,12 +145,11 @@ public class HgmdConverter extends BioDBConverter
         item.addToCollection("umlses", getUmlses(response));
         store(item);
         String hgmdId = item.getIdentifier();
-
-        getPublication(response.getString("pmid"), hgmdId);
-        getSnp(response, hgmdId);
+        return hgmdId;
     }
 
-    private String getPublication(String pubMedId, String hgmdId) throws ObjectStoreException {
+    private String getPublication(ResultSet response, String hgmdId) throws Exception {
+        String pubMedId = response.getString("pmid");
         LOG.warn("getPublication : " + pubMedId );
         String ret = publicationMap.get(pubMedId);
 
@@ -147,11 +167,12 @@ public class HgmdConverter extends BioDBConverter
     }
 
     private String getSnp(ResultSet response, String hgmdId) throws Exception {
+        // hgmd にdbsnpがあればそのまま使用、なければacc_numで代用
         String identifier = response.getString("dbsnp");
-        LOG.warn("getSnp : dbsnp identifier " + identifier);
+        LOG.info("getSnp : dbsnp identifier " + identifier);
         if(StringUtils.isEmpty(identifier)) {
             identifier = response.getString("acc_num");
-            LOG.warn("getSnp : accnum identifier " + identifier);
+            LOG.info("getSnp : accnum identifier " + identifier);
         }
 
         String ret = snpMap.get(identifier);
@@ -171,18 +192,18 @@ public class HgmdConverter extends BioDBConverter
                 String location = chromosome + ":" + coodStart;
                 // TODO: データの作り方 要確認 : allmut.hgvsまたはallmut.deletionまたはallmut.insertion
                 String refSnpAllele = "";
-                if(response.getString("hgvs") != null && response.getString("hgvs").length() != 0) {
+                if(!StringUtils.isEmpty(response.getString("hgvs"))) {
                     refSnpAllele = response.getString("hgvs");
-                    LOG.warn("getSnp : hgvs refSnpAllele " + refSnpAllele);
-                }else if(response.getString("deletion") != null && response.getString("deletion").length() != 0) {
+                    LOG.info("getSnp : hgvs refSnpAllele " + refSnpAllele);
+                }else if(!StringUtils.isEmpty(response.getString("deletion"))) {
                     refSnpAllele = response.getString("deletion");
-                    LOG.warn("getSnp : deletion refSnpAllele " + refSnpAllele);
-                }else if(response.getString("insertion") != null && response.getString("insertion").length() != 0) {
+                    LOG.info("getSnp : deletion refSnpAllele " + refSnpAllele);
+                }else if(!StringUtils.isEmpty(response.getString("insertion"))) {
                     refSnpAllele = response.getString("insertion");
-                    LOG.warn("getSnp : insertion refSnpAllele " + refSnpAllele);
+                    LOG.info("getSnp : insertion refSnpAllele " + refSnpAllele);
                 }
-                LOG.warn("getSnp : coodStart " + coodStart);
-                LOG.warn("getSnp : chromosome " + chromosome);
+                LOG.info("getSnp : coodStart " + coodStart);
+                LOG.info("getSnp : chromosome " + chromosome);
                 // TODO: データの作り方　要確認 :  ?
                 String orientation = "";
 
@@ -317,15 +338,98 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-    private String createGene(ResultSet response) throws Exception {
-        // refCore
+    private String getGene(ResultSet response) throws Exception {
+        // get refCore
         String refCore = response.getString("refCORE");
+
+        // refCore contains synonym.intermine_value, get synonym.subjectid.
+        Set<String> synonymSets = getSynonymItem(refCore);
+
+        // synonym.subjectid contains gene.id, get gene id.
         // TODO : refCoreを変換？
         String ncbiGeneId = refCore;
 
         // retval : gene.identifier
         return getGene(ncbiGeneId);
     }
+
+    private Set<String> getSynonymItem(String refCore) throws Exception {
+        Set<String> synonymSubjectIdSet = new HashSet<String>();
+
+        LOG.info("Start loading synonym");
+        ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
+
+        Query q = new Query();
+        QueryClass qcSynonym = new QueryClass(os.getModel().
+                getClassDescriptorByName("Synonym").getType());
+
+        q.addFrom(qcSynonym);
+        QueryField qcSynonymIntermineValue = new QueryField(qcSynonym, "intermine_value");
+        q.addToSelect(qcSynonymIntermineValue);
+        QueryField qcSynonymSubjectId = new QueryField(qcSynonym, "subjectid");
+        q.addToSelect(qcSynonymSubjectId);
+
+        SimpleConstraint sc = new SimpleConstraint(qcSynonymIntermineValue, ConstraintOp.EQUALS, new QueryValue(refCore));
+        q.setConstraint(sc);
+
+        Results results = os.execute(q);
+        Iterator<Object> iterator = results.iterator();
+
+        LOG.info("iterator before" );
+        while (iterator.hasNext()) {
+            ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
+            InterMineObject p = rr.get(0);
+
+            LOG.info("InterMineObject { p :"+ p + "}" );
+            String intermineValue = (String) p.getFieldValue("intermine_value");
+            String subjectId = (String) p.getFieldValue("subjectid");
+            LOG.info(" loaded snpFunction { intermineValue : " + intermineValue + ",subjectId : " + subjectId + "}" );
+
+            if (subjectId != null) {
+                synonymSubjectIdSet.add(subjectId);
+            }
+        }
+        LOG.info("loaded "+ synonymSubjectIdSet.size()+" getSynonymItem (size)" );
+        return synonymSubjectIdSet;
+    }
+
+//    private Set<String> getGeneId(String geneId) throws Exception {
+//        Set<String> geneIdSet = new HashSet<String>();
+//
+//        LOG.info("Start loading gene");
+//        ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
+//
+//        Query q = new Query();
+//        QueryClass qcGene = new QueryClass(os.getModel().
+//                getClassDescriptorByName("Gene").getType());
+//
+//        q.addFrom(qcGene);
+//        QueryField qcGeneId = new QueryField(qcGene, "id");
+//        q.addToSelect(qcGeneId);
+//
+//        SimpleConstraint sc = new SimpleConstraint(qcGeneId, ConstraintOp.EQUALS, new QueryValue(geneId));
+//        q.setConstraint(sc);
+//
+//        Results results = os.execute(q);
+//        Iterator<Object> iterator = results.iterator();
+//
+//        LOG.info("iterator before" );
+//        while (iterator.hasNext()) {
+//            ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
+//            InterMineObject p = rr.get(0);
+//
+//            LOG.info("InterMineObject { p :"+ p + "}" );
+//            Integer id = (Integer) p.getFieldValue("id");
+//            LOG.info(" loaded snpFunction { intermineValue : " + id + "}" );
+//
+//            if (id != null) {
+//                geneIdSet.add(id.toString());
+//            }
+//        }
+//        LOG.info("loaded "+ geneIdSet.size()+" getGeneId (size)" );
+//        return  geneIdSet;
+//
+//    }
 
     private String getGene(String ncbiGeneId) throws ObjectStoreException {
         String ret = geneMap.get(ncbiGeneId);
