@@ -116,15 +116,13 @@ public class HgmdConverter extends BioDBConverter
                 LOG.info("snpFunctionId : " + snpFunctionId );
 
                 // get GeneId.
-                getGene(resAllmut);
+                String geneId = getGene(resAllmut);
 
                 // VariationAnnotaition data input & reference geneId, SNPFunctionId, SNPId. return VariationAnnotation id.
-                String variationAnnotationId = "";
+                String variationAnnotationRef = getVariationAnnotation(geneId, snpFunctionId, snpId);
 
                 // SNPReference data input & get SNPReference identifier.
-                getSNPReference(resAllmut, snpFunctionId, "");
-
-
+                getSNPReference(resAllmut, snpFunctionId, variationAnnotationRef);
             }
 
         }
@@ -343,20 +341,16 @@ public class HgmdConverter extends BioDBConverter
         String refCore = response.getString("refCORE");
 
         // refCore contains synonym.intermine_value, get synonym.subjectid.
-        Set<String> synonymSets = getSynonymItem(refCore);
+        Map<String, String> synonymMap = getSynonymItem(refCore);
+        String geneId = synonymMap.get(refCore);
 
-        // synonym.subjectid contains gene.id, get gene id.
-        // TODO : refCoreを変換？
-        String ncbiGeneId = refCore;
-
-        // retval : gene.identifier
-        return getGene(ncbiGeneId);
+        return geneId;
     }
 
-    private Set<String> getSynonymItem(String refCore) throws Exception {
-        Set<String> synonymSubjectIdSet = new HashSet<String>();
+    private Map<String, String> getSynonymItem(String refCore) throws Exception {
+        Map<String, String> synonymSubjectIdMap = new HashMap();
 
-        LOG.info("Start loading synonym");
+        LOG.info("Start loading synonym. refCore : " + refCore);
         ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
 
         Query q = new Query();
@@ -364,12 +358,8 @@ public class HgmdConverter extends BioDBConverter
                 getClassDescriptorByName("Synonym").getType());
 
         q.addFrom(qcSynonym);
-        QueryField qcSynonymIntermineValue = new QueryField(qcSynonym, "intermine_value");
-        q.addToSelect(qcSynonymIntermineValue);
-        QueryField qcSynonymSubjectId = new QueryField(qcSynonym, "subjectid");
-        q.addToSelect(qcSynonymSubjectId);
-
-        SimpleConstraint sc = new SimpleConstraint(qcSynonymIntermineValue, ConstraintOp.EQUALS, new QueryValue(refCore));
+        QueryField qcSynonymInterMineValue = new QueryField(qcSynonym, "value");
+        SimpleConstraint sc = new SimpleConstraint(qcSynonymInterMineValue, ConstraintOp.EQUALS, new QueryValue(refCore));
         q.setConstraint(sc);
 
         Results results = os.execute(q);
@@ -381,16 +371,16 @@ public class HgmdConverter extends BioDBConverter
             InterMineObject p = rr.get(0);
 
             LOG.info("InterMineObject { p :"+ p + "}" );
-            String intermineValue = (String) p.getFieldValue("intermine_value");
-            String subjectId = (String) p.getFieldValue("subjectid");
+            String intermineValue = (String) p.getFieldValue("value");
+            InterMineObject geneItem = (InterMineObject)p.getFieldValue("subject");
+            Integer subjectId = (Integer) geneItem.getFieldValue("id");
             LOG.info(" loaded snpFunction { intermineValue : " + intermineValue + ",subjectId : " + subjectId + "}" );
-
             if (subjectId != null) {
-                synonymSubjectIdSet.add(subjectId);
+                synonymSubjectIdMap.put(refCore, subjectId.toString());
             }
         }
-        LOG.info("loaded "+ synonymSubjectIdSet.size()+" getSynonymItem (size)" );
-        return synonymSubjectIdSet;
+        LOG.info("loaded "+ synonymSubjectIdMap.size()+" getSynonymItem (size)" );
+        return synonymSubjectIdMap;
     }
 
 //    private Set<String> getGeneId(String geneId) throws Exception {
@@ -443,6 +433,20 @@ public class HgmdConverter extends BioDBConverter
             geneMap.put(ncbiGeneId, ret);
         }
         return ret;
+    }
+
+    private String getVariationAnnotation(String geneId, String functionId, String snpId) throws ObjectStoreException {
+
+        String identifier = snpId + "-" + geneId;
+        LOG.info("getVariationAnnotation : identifier = " + identifier);
+        Item item = createItem("VariationAnnotation");
+        item.setAttribute("identifier", identifier);
+        item.setReference("gene", geneId);
+        item.setReference("function", functionId);
+        item.setReference("snp", snpId);
+        store(item);
+        LOG.info("getVariationAnnotation : OK. identifier = " + item.getIdentifier());
+        return item.getIdentifier();
     }
 
     private String getSNPReference(ResultSet response, String snpFunctionRef, String variationAnnotationRef) throws Exception {
