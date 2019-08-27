@@ -103,26 +103,38 @@ public class HgmdConverter extends BioDBConverter
         while (resAllmut.next()) {
             // hgmd data input. return hgmd id.
             String hgmdId = createHgmd(resAllmut);
+
             // publication data input & reference hgmd.
             getPublication(resAllmut, hgmdId);
+
             // snp data input & reference hgmd. return snpId.
-            String snpId = getSnp(resAllmut, hgmdId);
+            // hgmd にdbsnpがあればそのまま使用、なければacc_numで代用
+            String snpId = resAllmut.getString("dbsnp");
+            LOG.info("getSnp : dbsnp identifier " + snpId);
+            if(StringUtils.isEmpty(snpId)) {
+                snpId = resAllmut.getString("acc_num");
+                LOG.info("getSnp : accnum identifier " + snpId);
+            }
+            String snpRef = getSnp(resAllmut, snpId, hgmdId);
 
             boolean isSnpContainsHgmdDbSnp = false;
             // if hgmd cntains dbsnp, only set reference snpid. else set snp and other data.
             if(!isSnpContainsHgmdDbSnp) {
                 // SNPFunction data input. return SNPFunctionId.
-                String snpFunctionId = getOrCreateSnpFunction(resAllmut);
-                LOG.info("snpFunctionId : " + snpFunctionId );
+                String snpFunctionRef = getOrCreateSnpFunction(resAllmut);
+                LOG.info("snpFunctionRef : " + snpFunctionRef );
 
                 // get GeneId.
-                String geneId = getGene(resAllmut);
+                String geneId = getGenePrimaryId(resAllmut);
+                String geneRef = getGene(geneId);
 
+                // get varuatuibAnnotation
+                String variationId = snpId + "-" + geneId;
                 // VariationAnnotaition data input & reference geneId, SNPFunctionId, SNPId. return VariationAnnotation id.
-                String variationAnnotationRef = getVariationAnnotation(geneId, snpFunctionId, snpId);
+                String variationAnnotationRef = getVariationAnnotation(variationId, geneRef, snpFunctionRef, snpRef);
 
                 // SNPReference data input & get SNPReference identifier.
-                getSNPReference(resAllmut, snpFunctionId, variationAnnotationRef);
+                getSNPReference(resAllmut, snpFunctionRef, variationAnnotationRef);
             }
 
         }
@@ -164,15 +176,7 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-    private String getSnp(ResultSet response, String hgmdId) throws Exception {
-        // hgmd にdbsnpがあればそのまま使用、なければacc_numで代用
-        String identifier = response.getString("dbsnp");
-        LOG.info("getSnp : dbsnp identifier " + identifier);
-        if(StringUtils.isEmpty(identifier)) {
-            identifier = response.getString("acc_num");
-            LOG.info("getSnp : accnum identifier " + identifier);
-        }
-
+    private String getSnp(ResultSet response, String identifier, String hgmdId) throws Exception {
         String ret = snpMap.get(identifier);
 
         if(ret == null) {
@@ -336,15 +340,15 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-    private String getGene(ResultSet response) throws Exception {
+    private String getGenePrimaryId(ResultSet response) throws Exception {
         // get refCore
         String refCore = response.getString("refCORE");
 
         // refCore contains synonym.intermine_value, get synonym.subjectid.
         Map<String, String> synonymSubjectMap = getSynonymSubject(refCore);
-        String geneId = synonymSubjectMap.get(refCore);
+        String genePrimaryId = synonymSubjectMap.get(refCore);
 
-        return getGene(geneId);
+        return genePrimaryId;
     }
 
     private Map<String, String> getSynonymSubject(String refCore) throws Exception {
@@ -437,15 +441,14 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-    private String getVariationAnnotation(String geneId, String functionId, String snpId) throws ObjectStoreException {
+    private String getVariationAnnotation(String variationId, String geneRef, String functionRef, String snpRef) throws ObjectStoreException {
 
-        String identifier = snpId + "-" + geneId;
-        LOG.info("getVariationAnnotation : identifier = " + identifier);
+        LOG.info("getVariationAnnotation : identifier = " + variationId);
         Item item = createItem("VariationAnnotation");
-        item.setAttribute("identifier", identifier);
-        item.setReference("gene", geneId);
-        item.setReference("function", functionId);
-        item.setReference("snp", snpId);
+        item.setAttribute("identifier", variationId);
+        item.setReference("gene", geneRef);
+        item.setReference("function", functionRef);
+        item.setReference("snp", snpRef);
         store(item);
         LOG.info("getVariationAnnotation : OK. identifier = " + item.getIdentifier());
         return item.getIdentifier();
