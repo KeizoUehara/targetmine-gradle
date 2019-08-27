@@ -375,7 +375,7 @@ public class HgmdConverter extends BioDBConverter
             String interMineValue = (String) p.getFieldValue("value");
             // synonym.subject is 'gene' Item, get subject.
             InterMineObject geneItem = (InterMineObject)p.getFieldValue("subject");
-            String genePrimaryId = (String) geneItem.getFieldValue("primaryidentifier");
+            String genePrimaryId = (String) geneItem.getFieldValue("primaryIdentifier");
             LOG.info(" loaded snpFunction { interMineValue : " + interMineValue + ",genePrimaryId : " + genePrimaryId + "}" );
             if (genePrimaryId != null) {
                 synonymSubjectIdMap.put(refCore, genePrimaryId);
