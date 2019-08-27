@@ -341,13 +341,13 @@ public class HgmdConverter extends BioDBConverter
         String refCore = response.getString("refCORE");
 
         // refCore contains synonym.intermine_value, get synonym.subjectid.
-        Map<String, String> synonymMap = getSynonymItem(refCore);
-        String geneId = synonymMap.get(refCore);
+        Map<String, String> synonymSubjectMap = getSynonymSubject(refCore);
+        String geneId = synonymSubjectMap.get(refCore);
 
-        return geneId;
+        return getGene(geneId);
     }
 
-    private Map<String, String> getSynonymItem(String refCore) throws Exception {
+    private Map<String, String> getSynonymSubject(String refCore) throws Exception {
         Map<String, String> synonymSubjectIdMap = new HashMap();
 
         LOG.info("Start loading synonym. refCore : " + refCore);
@@ -358,10 +358,11 @@ public class HgmdConverter extends BioDBConverter
                 getClassDescriptorByName("Synonym").getType());
 
         q.addFrom(qcSynonym);
+        q.addToSelect(qcSynonym);
         QueryField qcSynonymInterMineValue = new QueryField(qcSynonym, "value");
         SimpleConstraint sc = new SimpleConstraint(qcSynonymInterMineValue, ConstraintOp.EQUALS, new QueryValue(refCore));
         q.setConstraint(sc);
-
+        // query = select * from synonym where value = refCore;
         Results results = os.execute(q);
         Iterator<Object> iterator = results.iterator();
 
@@ -371,12 +372,13 @@ public class HgmdConverter extends BioDBConverter
             InterMineObject p = rr.get(0);
 
             LOG.info("InterMineObject { p :"+ p + "}" );
-            String intermineValue = (String) p.getFieldValue("value");
+            String interMineValue = (String) p.getFieldValue("value");
+            // synonym.subject is 'gene' Item, get subject.
             InterMineObject geneItem = (InterMineObject)p.getFieldValue("subject");
-            Integer subjectId = (Integer) geneItem.getFieldValue("id");
-            LOG.info(" loaded snpFunction { intermineValue : " + intermineValue + ",subjectId : " + subjectId + "}" );
-            if (subjectId != null) {
-                synonymSubjectIdMap.put(refCore, subjectId.toString());
+            String genePrimaryId = (String) geneItem.getFieldValue("primaryidentifier");
+            LOG.info(" loaded snpFunction { interMineValue : " + interMineValue + ",genePrimaryId : " + genePrimaryId + "}" );
+            if (genePrimaryId != null) {
+                synonymSubjectIdMap.put(refCore, genePrimaryId);
             }
         }
         LOG.info("loaded "+ synonymSubjectIdMap.size()+" getSynonymItem (size)" );
@@ -468,6 +470,17 @@ public class HgmdConverter extends BioDBConverter
     private String createSNPReference(String mrnaAcc, String mrnaPos, String orientation,
                                       String allele, String codon, String proteinAcc, int aaPos, String residue,
                                       String funcRef, String vaItemRef) throws ObjectStoreException {
+        LOG.info("createSNPReference : mrnaAcc = " + mrnaAcc
+                + ", mrnaPos = " + mrnaPos
+                + ", orientation = " + orientation
+                + ", allele = " + allele
+                + ", codon = " + codon
+                + ", proteinAcc = " + proteinAcc
+                + ", aaPos = " + aaPos
+                + ", residue = " + residue
+                + ", funcRef = " + funcRef
+                + ", vaItemRef = " + vaItemRef
+        );
         Item item = createItem("SNPReference");
         item.setAttribute("mrnaAccession", mrnaAcc);
         if (!StringUtils.isEmpty(mrnaPos)) {
