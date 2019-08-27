@@ -45,6 +45,7 @@ public class HgmdConverter extends BioDBConverter
     private Map<String, String> geneMap = new HashMap<String, String>();
     private Map<String, String> snpMap = new HashMap<String, String>();
     private Map<String, String> publicationMap = new HashMap<String, String>();
+    private Map<String, String> variationAnnotationMap = new HashMap<String, String>();
 
     private String osAlias = null;
 
@@ -92,12 +93,13 @@ public class HgmdConverter extends BioDBConverter
         String queryAllmut = "select * from hgmd_pro.allmut " +
                 "LEFT JOIN hgmd_pro.mutnomen ON " +
                 "hgmd_pro.allmut.acc_num = hgmd_pro.mutnomen.acc_num " +
-                "LEFT JOIN hgmd_phenbase.hgmd_mutation ON " +
-                "hgmd_pro.allmut.acc_num = hgmd_phenbase.hgmd_mutation.acc_num " +
-                "LEFT JOIN hgmd_phenbase.phenotype_concept ON " +
-                "hgmd_phenbase.hgmd_mutation.phen_id = hgmd_phenbase.phenotype_concept.phen_id " +
-                // TODO : debug
-                "limit 10 " +
+
+//                "LEFT JOIN hgmd_phenbase.hgmd_mutation ON " +
+//                "hgmd_pro.allmut.acc_num = hgmd_phenbase.hgmd_mutation.acc_num " +
+//                "LEFT JOIN hgmd_phenbase.phenotype_concept ON " +
+//                "hgmd_phenbase.hgmd_mutation.phen_id = hgmd_phenbase.phenotype_concept.phen_id " +
+//                // TODO : debug
+//                "limit 10 " +
                         ";";
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
@@ -128,8 +130,9 @@ public class HgmdConverter extends BioDBConverter
                 String geneId = getGenePrimaryId(resAllmut);
                 String geneRef = getGene(geneId);
 
-                // get varuatuibAnnotation
-                String variationId = snpId + "-" + geneId;
+                // get variationAnnotation
+                if(StringUtils.isEmpty(geneId)) geneId = "0";
+                String variationId = combineString(snpId, geneId, "-");
                 // VariationAnnotaition data input & reference geneId, SNPFunctionId, SNPId. return VariationAnnotation id.
                 String variationAnnotationRef = getVariationAnnotation(variationId, geneRef, snpFunctionRef, snpRef);
 
@@ -152,7 +155,7 @@ public class HgmdConverter extends BioDBConverter
         item.setAttribute("identifier", identifier);
         item.setAttribute("description", description);
         item.setAttribute("variantClass", variantClass);
-        item.addToCollection("umlses", getUmlses(response));
+//        item.addToCollection("umlses", getUmlses(response));
         store(item);
         String hgmdId = item.getIdentifier();
         return hgmdId;
@@ -160,6 +163,9 @@ public class HgmdConverter extends BioDBConverter
 
     private String getPublication(ResultSet response, String hgmdId) throws Exception {
         String pubMedId = response.getString("pmid");
+        if (StringUtils.isEmpty(pubMedId)) {
+            return "";
+        }
         LOG.warn("getPublication : " + pubMedId );
         String ret = publicationMap.get(pubMedId);
 
@@ -191,7 +197,7 @@ public class HgmdConverter extends BioDBConverter
                 String coodStart = response.getString("startCoord");
                 String chromosome = response.getString("chromosome");
                 // TODO: データの作り方 要確認 : allmut.chromosomeとallmut.coordSTART
-                String location = chromosome + ":" + coodStart;
+                String location = combineString(chromosome, coodStart, ":");
                 // TODO: データの作り方 要確認 : allmut.hgvsまたはallmut.deletionまたはallmut.insertion
                 String refSnpAllele = "";
                 if(!StringUtils.isEmpty(response.getString("hgvs"))) {
@@ -343,6 +349,9 @@ public class HgmdConverter extends BioDBConverter
     private String getGenePrimaryId(ResultSet response) throws Exception {
         // get refCore
         String refCore = response.getString("refCORE");
+        if(StringUtils.isEmpty(refCore)){
+            return "";
+        }
 
         // refCore contains synonym.intermine_value, get synonym.subjectid.
         Map<String, String> synonymSubjectMap = getSynonymSubject(refCore);
@@ -427,43 +436,56 @@ public class HgmdConverter extends BioDBConverter
 //
 //    }
 
-    private String getGene(String ncbiGeneId) throws ObjectStoreException {
-        String ret = geneMap.get(ncbiGeneId);
+    private String getGene(String primaryIdentifier) throws ObjectStoreException {
+        if(StringUtils.isEmpty(primaryIdentifier)) {
+            return "";
+        }
+        String ret = geneMap.get(primaryIdentifier);
 
         if (ret == null) {
             Item item = createItem("Gene");
-            item.setAttribute("primaryIdentifier", ncbiGeneId);
-            item.setAttribute("ncbiGeneId", ncbiGeneId);
+            item.setAttribute("primaryIdentifier", primaryIdentifier);
+            item.setAttribute("ncbiGeneId", primaryIdentifier);
             store(item);
             ret = item.getIdentifier();
-            geneMap.put(ncbiGeneId, ret);
+            geneMap.put(primaryIdentifier, ret);
         }
         return ret;
     }
 
     private String getVariationAnnotation(String variationId, String geneRef, String functionRef, String snpRef) throws ObjectStoreException {
-
         LOG.info("getVariationAnnotation : identifier = " + variationId);
-        Item item = createItem("VariationAnnotation");
-        item.setAttribute("identifier", variationId);
-        item.setReference("gene", geneRef);
-        item.setReference("function", functionRef);
-        item.setReference("snp", snpRef);
-        store(item);
-        LOG.info("getVariationAnnotation : OK. identifier = " + item.getIdentifier());
-        return item.getIdentifier();
+        String ret = variationAnnotationMap.get(variationId);
+        if(ret == null) {
+            Item item = createItem("VariationAnnotation");
+            item.setAttribute("identifier", variationId);
+            if(!StringUtils.isEmpty(geneRef)) {
+                item.setReference("gene", geneRef);
+            }
+            if(!StringUtils.isEmpty(functionRef)) {
+                item.setReference("function", functionRef);
+            }
+            if(!StringUtils.isEmpty(snpRef)) {
+                item.setReference("snp", snpRef);
+            }
+            store(item);
+            ret = item.getIdentifier();
+            LOG.info("getVariationAnnotation : OK. identifier = " + ret);
+            variationAnnotationMap.put(variationId, ret);
+        }
+        return ret;
     }
 
     private String getSNPReference(ResultSet response, String snpFunctionRef, String variationAnnotationRef) throws Exception {
-        String mrnaAcc = response.getString("refCORE") + "." + response.getString("refVER"); // TODO: 文字列結合の方法?
+        String mrnaAcc = combineString(response.getString("refCORE"), response.getString("refVER"), "."); // TODO: 文字列結合の方法?
         String mrnaPos = response.getString("cSTART");
 
         String orientation = ""; // TODO: データの作り方?
-        String allele = response.getString("wildBASE") + " -> " + response.getString("mutBASE"); // TODO: 文字列結合の方法?
+        String allele = combineString(response.getString("wildBASE"), response.getString("mutBASE"), " -> "); // TODO: 文字列結合の方法?
         String codon = ""; // TODO: データの作り方?
-        String proteinAcc = response.getString("protCORE") + "." + response.getString("protVER"); // TODO: 文字列結合の方法?
+        String proteinAcc = combineString(response.getString("protCORE"), response.getString("protVER"),"."); // TODO: 文字列結合の方法?
         int aaPos = response.getInt("codon");
-        String residue = response.getString("wildAMINO") + " -> " +  response.getString("mutAMINO"); // TODO: 文字列結合の方法?
+        String residue = combineString(response.getString("wildAMINO"), response.getString("mutAMINO"), " -> "); // TODO: 文字列結合の方法?
         String funcRef = snpFunctionRef;
         String vaItemRef = variationAnnotationRef;
 
@@ -485,7 +507,9 @@ public class HgmdConverter extends BioDBConverter
                 + ", vaItemRef = " + vaItemRef
         );
         Item item = createItem("SNPReference");
-        item.setAttribute("mrnaAccession", mrnaAcc);
+        if (!StringUtils.isEmpty(mrnaAcc)) {
+            item.setAttribute("mrnaAccession", mrnaAcc);
+        }
         if (!StringUtils.isEmpty(mrnaPos)) {
             item.setAttribute("mrnaPosition", mrnaPos);
         }
@@ -517,6 +541,20 @@ public class HgmdConverter extends BioDBConverter
         store(item);
 
         return item.getIdentifier();
+    }
+
+    private String combineString(String str1, String str2, String combineStr) {
+        String str = "";
+        if(!StringUtils.isEmpty(str1) && !StringUtils.isEmpty(str2)) {
+            str = str1 + combineStr + str2;
+        }
+        else if (!StringUtils.isEmpty(str1) && StringUtils.isEmpty(str2)) {
+            str = str1;
+        } else if (StringUtils.isEmpty(str1) && !StringUtils.isEmpty(str2)) {
+            str = str2;
+        }
+
+        return str;
     }
 
     /**
