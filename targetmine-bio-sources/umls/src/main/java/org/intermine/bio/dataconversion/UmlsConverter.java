@@ -63,29 +63,30 @@ public class UmlsConverter extends BioFileConverter
 		getDiseaseTermIds();
 		try(UMLSParser parser = new UMLSParser(reader, mrStyFile,UMLSParser.DATA_TYPES)){
 			UMLS umls = null;
-			HashMap<String, Item> umlsMap = new HashMap<>();
+			HashSet<String> umlsMap = new HashSet<>();
 			HashSet<String> keySet = new HashSet<>();
+			Item diseaseConcept = null;
 			while((umls = parser.getNext())!=null) {
 				String identifier = umls.getIdentifier();
-				Item umlsDisease = umlsMap.get(identifier);
-				if(umlsDisease==null){
-					umlsDisease = createItem("DiseaseConcept");
-					umlsDisease.setAttribute("identifier",identifier);
+				if(diseaseConcept != null && !identifier.equals(diseaseConcept.getIdentifier())) {
+					store(diseaseConcept);
+				}else {
+					diseaseConcept = createItem("DiseaseConcept");
+					diseaseConcept.setAttribute("identifier",identifier);
 					String name = umls.getName();
-					umlsDisease.setAttribute("name",name);
+					diseaseConcept.setAttribute("name",name);
 					
 					Item umlsTerm = createItem("UMLSTerm");
 					umlsTerm.setAttribute("identifier",identifier);
 					umlsTerm.setAttribute("name",name);
 					umlsTerm.setReference("ontology", getOntology("MeSH"));
 
-					umlsDisease.addToCollection("terms", umlsTerm);
+					diseaseConcept.addToCollection("terms", umlsTerm);
 					store(umlsTerm);
 					if(diseaseTermIdSet.contains(identifier)) {
 						Item medgen = getOrCreateItem("DiseaseTerm", identifier);
-						umlsDisease.addToCollection("terms", medgen);
+						diseaseConcept.addToCollection("terms", medgen);
 					}
-					umlsMap.put(identifier,umlsDisease);
 				}
 				if("MSH".equals(umls.getDbType())){
 					String meshId = umls.getDbId();
@@ -94,11 +95,11 @@ public class UmlsConverter extends BioFileConverter
 						continue;
 					}
 					Item mesh = getOrCreateItem("MeshTerm", meshId);
-					umlsDisease.addToCollection("terms", mesh);
+					diseaseConcept.addToCollection("terms", mesh);
 				}
 			}
-			for (Item item : umlsMap.values()) {
-				store(item);
+			if(diseaseConcept!=null) {
+				store(diseaseConcept);
 			}
 		}
 	}
