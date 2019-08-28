@@ -155,9 +155,9 @@ public class HgmdConverter extends BioDBConverter
         while (resCui.next()) {
             // get Hgmd ref
             // hgmd にdbsnpがあればそのまま使用、なければacc_numで代用
-            String snpId = resAllmut.getString("dbsnp");
+            String snpId = resCui.getString("dbsnp");
             if(StringUtils.isEmpty(snpId)) {
-                snpId = resAllmut.getString("acc_num");
+                snpId = resCui.getString("acc_num");
                 LOG.info("getSnp : accnum identifier = " + snpId);
             }
             String cui = resCui.getString("cui");
