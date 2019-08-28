@@ -63,12 +63,12 @@ public class UmlsConverter extends BioFileConverter
 		getDiseaseTermIds();
 		try(UMLSParser parser = new UMLSParser(reader, mrStyFile,UMLSParser.DATA_TYPES)){
 			UMLS umls = null;
-			HashSet<String> umlsMap = new HashSet<>();
 			HashSet<String> keySet = new HashSet<>();
 			Item diseaseConcept = null;
+			String prevIdentifier = null;
 			while((umls = parser.getNext())!=null) {
 				String identifier = umls.getIdentifier();
-				if(diseaseConcept == null || !identifier.equals(diseaseConcept.getIdentifier())) {
+				if(diseaseConcept == null || !identifier.equals(prevIdentifier)) {
 					if(diseaseConcept!=null) {
 						store(diseaseConcept);
 					}
@@ -98,11 +98,19 @@ public class UmlsConverter extends BioFileConverter
 					Item mesh = getOrCreateItem("MeshTerm", meshId);
 					diseaseConcept.addToCollection("terms", mesh);
 				}
+				prevIdentifier = identifier;
 			}
 			if(diseaseConcept!=null) {
 				store(diseaseConcept);
 			}
 		}
+	}
+	@Override
+	public Integer store(Item item) throws ObjectStoreException {
+		Object id = item.hasAttribute("identifier")?item.getAttribute("identifier").getValue():"";
+		System.out.println(item.getClassName() +":"+item.getIdentifier()+":" + id);
+
+		return super.store(item);
 	}
 	private HashMap<String,HashMap<String,Item>> itemSet = new HashMap<String, HashMap<String,Item>>();
 
