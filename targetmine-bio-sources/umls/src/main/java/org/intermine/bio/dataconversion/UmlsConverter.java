@@ -118,7 +118,8 @@ public class UmlsConverter extends BioFileConverter
 			Item item = createItem(dbName);
 			item.setAttribute("identifier", identifier);
 			store(item);
-			hashMap.put(identifier, item.getIdentifier());
+			termIdentifier = item.getIdentifier();
+			hashMap.put(identifier, identifier2);
 		}
 		return termIdentifier;
 	}
