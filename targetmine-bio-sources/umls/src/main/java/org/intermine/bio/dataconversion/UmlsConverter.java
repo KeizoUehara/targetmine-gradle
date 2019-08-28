@@ -68,13 +68,19 @@ public class UmlsConverter extends BioFileConverter
 				String identifier = umls.getIdentifier();
 				Item umlsDisease = umlsMap.get(identifier);
 				if(umlsDisease==null){
-					umlsDisease = createItem("UMLSDisease");
+					umlsDisease = createItem("DiseaseConcept");
 					umlsDisease.setAttribute("identifier",identifier);
 					String name = umls.getName();
 					umlsDisease.setAttribute("name",name);
+					
+					Item umlsTerm = createItem("UMLSTerm");
+					umlsTerm.setAttribute("identifier",identifier);
+					umlsTerm.setAttribute("name",name);
+					umlsDisease.addToCollection("terms", umlsTerm);
+					store(umlsTerm);
 					if(diseaseTermIdSet.contains(identifier)) {
 						Item medgen = getOrCreateItem("DiseaseTerm", identifier);
-						umlsDisease.setReference("medgen", medgen);
+						umlsDisease.addToCollection("terms", medgen);
 					}
 					umlsMap.put(identifier,umlsDisease);
 				}
@@ -85,7 +91,7 @@ public class UmlsConverter extends BioFileConverter
 						continue;
 					}
 					Item mesh = getOrCreateItem("MeshTerm", meshId);
-					umlsDisease.addToCollection("meshes", mesh);
+					umlsDisease.addToCollection("terms", mesh);
 				}
 			}
 			for (Item item : umlsMap.values()) {
