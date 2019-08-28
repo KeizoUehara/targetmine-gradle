@@ -29,6 +29,6 @@
         <attribute name="result" type="java.lang.String"/>
 
         <attribute name="condition" type="java.lang.String"/>
-        <collection name="umlses" referenced-type="UMLSDisease" reverse-reference="trials"/>
+        <collection name="umlses" referenced-type="UMLSTerm" reverse-reference="trials"/>
     </class>
 </classes>

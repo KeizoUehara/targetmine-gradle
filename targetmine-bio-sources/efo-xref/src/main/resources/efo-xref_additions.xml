@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <classes>
-	<class name="OntologyTerm" extends="OntologyTerm" is-interface="true">
+	<class name="OntologyTerm" is-interface="true">
 		<collection name="diseaseConcepts" referenced-type="DiseaseConcept"/>
 	</class>
 
