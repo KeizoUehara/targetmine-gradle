@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -76,6 +77,8 @@ public class UmlsConverter extends BioFileConverter
 					Item umlsTerm = createItem("UMLSTerm");
 					umlsTerm.setAttribute("identifier",identifier);
 					umlsTerm.setAttribute("name",name);
+					umlsTerm.setReference("ontology", getOntology("MeSH"));
+
 					umlsDisease.addToCollection("terms", umlsTerm);
 					store(umlsTerm);
 					if(diseaseTermIdSet.contains(identifier)) {
@@ -149,4 +152,17 @@ public class UmlsConverter extends BioFileConverter
 	public void setMrStyFile( File mrStyFile ) {
 		this.mrStyFile = mrStyFile;
 	}
+	private Map<String, String> ontologyMap = new HashMap<String, String>();
+	private String getOntology(String name) throws ObjectStoreException {
+		String ret = ontologyMap.get(name);
+		if (ret == null) {
+			Item item = createItem("Ontology");
+			item.setAttribute("name", name);
+			store(item);
+			ret = item.getIdentifier();
+			ontologyMap.put(name, ret);
+		}
+		return ret;
+	}
+
 }
