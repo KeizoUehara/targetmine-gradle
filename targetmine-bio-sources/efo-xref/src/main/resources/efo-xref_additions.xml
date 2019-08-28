@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <classes>
 	<class name="OntologyTerm" is-interface="true">
-		<collection name="diseaseConcepts" referenced-type="DiseaseConcept"/>
+		<collection name="diseaseConcepts" referenced-type="DiseaseConcept" reverse-reference="terms"/>
 	</class>
 
 	<class name="EFOTerm" extends="OntologyTerm" is-interface="true">
@@ -9,6 +9,7 @@
 	<class name="MeshTerm" extends="OntologyTerm" is-interface="true"/>
     <class name="DiseaseConcept" is-interface="true">
         <attribute name="identifier" type="java.lang.String"/>
+        <collection name="terms" referenced-type="OntologyTerm" reverse-reference="diseaseConcepts"/>
     </class>
 
 </classes>

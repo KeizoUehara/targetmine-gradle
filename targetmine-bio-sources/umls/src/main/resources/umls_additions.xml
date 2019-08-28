@@ -3,7 +3,7 @@
 
 <classes>
 	<class name="OntologyTerm" is-interface="true">
-		<collection name="diseaseConcepts" referenced-type="DiseaseConcept"/>
+		<collection name="diseaseConcepts" referenced-type="DiseaseConcept" reverse-reference="terms"/>
 	</class>
 
     <class name="UMLSTerm" extends="OntologyTerm" is-interface="true">
