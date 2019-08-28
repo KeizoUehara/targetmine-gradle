@@ -119,7 +119,7 @@ public class UmlsConverter extends BioFileConverter
 			item.setAttribute("identifier", identifier);
 			store(item);
 			termIdentifier = item.getIdentifier();
-			hashMap.put(identifier, identifier2);
+			hashMap.put(identifier, termIdentifier);
 		}
 		return termIdentifier;
 	}
