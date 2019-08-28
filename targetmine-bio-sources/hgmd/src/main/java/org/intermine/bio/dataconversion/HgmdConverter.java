@@ -42,6 +42,7 @@ public class HgmdConverter extends BioDBConverter
     private static final String DATASET_TITLE = "hgmd";
     private static final String DATA_SOURCE_NAME = "hgmd";
 
+    private Map<String, String> hgmdMap = new HashMap<String, String>();
     private Map<String, String> geneMap = new HashMap<String, String>();
     private Map<String, String> snpMap = new HashMap<String, String>();
     private Map<String, String> publicationMap = new HashMap<String, String>();
@@ -53,6 +54,7 @@ public class HgmdConverter extends BioDBConverter
 
     private Map<String, String> snpFunctionNameMap = new HashMap<String, String>();
     private Set<String> snpFunctionNameSet = new HashSet<String>();
+    private Set<String> umlsDiseaseSet = new HashSet<String>();
 
     private static Map<String, String> mutypeToSnpFunctionNames = new HashMap<String, String>();
     static {
@@ -118,10 +120,8 @@ public class HgmdConverter extends BioDBConverter
                 LOG.info("getSnp : accnum identifier " + snpId);
             }
             String snpRef = getSnp(resAllmut, snpId, hgmdId);
-
-            boolean isSnpContainsHgmdDbSnp = false;
-            // if hgmd cntains dbsnp, only set reference snpid. else set snp and other data.
-            if(!isSnpContainsHgmdDbSnp) {
+            // if hgmd contains dbsnp, only set reference snpid. else set snp and other data.
+            if(!snpIdSet.contains(snpId)) {
                 // SNPFunction data input. return SNPFunctionId.
                 String snpFunctionRef = getOrCreateSnpFunction(resAllmut);
                 LOG.info("snpFunctionRef : " + snpFunctionRef );
@@ -142,6 +142,27 @@ public class HgmdConverter extends BioDBConverter
 
         }
 
+        String queryCui = "select hgmd_pro.almut.acc_num AS acc_num, "+
+                "hgmd_phenbase.phenotype_concept.cui AS cui " +
+                "from hgmd_pro.allmut " +
+                "JOIN hgmd_phenbase.hgmd_mutation ON " +
+                "hgmd_pro.allmut.acc_num = hgmd_phenbase.hgmd_mutation.acc_num " +
+                "JOIN hgmd_phenbase.phenotype_concept ON " +
+                "hgmd_phenbase.hgmd_mutation.phen_id = hgmd_phenbase.phenotype_concept.phen_id " +
+                ";";
+        ResultSet resCui = stmt.executeQuery(queryCui);
+        while (resCui.next()) {
+            // get Hgmd ref
+            String identifier = resCui.getString("acc_num");
+            String cui = resCui.getString("cui");
+            String hgmdRef = hgmdMap.get(identifier);
+            // hgmd がnullでなく、cuiに一致するデータがumlsにある場合
+            if(!StringUtils.isEmpty(hgmdRef) && umlsDiseaseSet.contains(cui)){
+                Item item = createItem("UMLSDisease");
+                item.setAttribute("identifier", cui);
+                item.addToCollection("hgmds", hgmdRef);
+            }
+        }
         stmt.close();
         connection.close();
     }
@@ -151,14 +172,18 @@ public class HgmdConverter extends BioDBConverter
         String description = response.getString("descr");
         String variantClass = response.getString("tag");
 
-        Item item = createItem("Hgmd");
-        item.setAttribute("identifier", identifier);
-        item.setAttribute("description", description);
-        item.setAttribute("variantClass", variantClass);
+        String ret = hgmdMap.get(identifier);
+        if(ret == null) {
+            Item item = createItem("Hgmd");
+            item.setAttribute("identifier", identifier);
+            item.setAttribute("description", description);
+            item.setAttribute("variantClass", variantClass);
 //        item.addToCollection("umlses", getUmlses(response));
-        store(item);
-        String hgmdId = item.getIdentifier();
-        return hgmdId;
+            store(item);
+            ret = item.getIdentifier();
+            hgmdMap.put(identifier, ret);
+        }
+        return ret;
     }
 
     private String getPublication(ResultSet response, String hgmdId) throws Exception {
@@ -239,16 +264,13 @@ public class HgmdConverter extends BioDBConverter
         return ret;
     }
 
-    private String getUmlses(ResultSet response) throws Exception {
-        // hgmd acc_num
-        String acc_num = "";
-
-        String cui = response.getString("cui");
+    private String getUmlses(String cui, String hgmds) throws Exception {
         LOG.warn("getUmlses : cui " + cui);
 
         // Publication set only pubMedId.
         Item item = createItem("UMLSDisease");
         item.setAttribute("identifier", cui);
+        item.setReference("hgmds", hgmds);
         store(item);
         LOG.warn(" getUmlses : identifier = "+ cui);
         return item.getIdentifier();
@@ -314,6 +336,41 @@ public class HgmdConverter extends BioDBConverter
             }
         }
         LOG.info("loaded "+ snpFunctionNameSet.size()+" snpFunction (size)" );
+    }
+
+    /**
+     * DB read UMLSDisease column "identifier".
+     * @throws Exception
+     */
+    private void getUMLSDisease() throws Exception {
+        LOG.info("Start loading UMLSDisease identifier");
+        ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
+
+        Query q = new Query();
+        QueryClass qcUMLSDisease = new QueryClass(os.getModel().
+                getClassDescriptorByName("UMLSDisease").getType());
+
+        q.addFrom(qcUMLSDisease);
+        q.addToSelect(qcUMLSDisease);
+
+        Results results = os.execute(q);
+        Iterator<Object> iterator = results.iterator();
+
+        LOG.info("iterator before" );
+        while (iterator.hasNext()) {
+            LOG.info("iterator start" );
+            ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
+            InterMineObject p = rr.get(0);
+
+            LOG.info("InterMineObject { p :"+ p + "}" );
+            String name = (String) p.getFieldValue("identifier");
+            LOG.info(" loaded UMLSDisease { name : " + name + "}" );
+
+            if (name != null) {
+                umlsDiseaseSet.add(name);
+            }
+        }
+        LOG.info("loaded "+ umlsDiseaseSet.size()+" umlsDisease (size)" );
     }
 
     private String getOrCreateSnpFunction(ResultSet response) throws Exception {
