@@ -85,8 +85,8 @@ public class UmlsConverter extends BioFileConverter
 					diseaseConcept.addToCollection("terms", umlsTerm);
 					store(umlsTerm);
 					if(diseaseTermIdSet.contains(identifier)) {
-						Item medgen = getOrCreateItem("DiseaseTerm", identifier);
-						diseaseConcept.addToCollection("terms", medgen);
+						String medgenIdentifier = getOrCreateItem("DiseaseTerm", identifier);
+						diseaseConcept.addToCollection("terms", medgenIdentifier);
 					}
 				}
 				if("MSH".equals(umls.getDbType())){
@@ -95,8 +95,8 @@ public class UmlsConverter extends BioFileConverter
 					if(keySet.contains(key)) {
 						continue;
 					}
-					Item mesh = getOrCreateItem("MeshTerm", meshId);
-					diseaseConcept.addToCollection("terms", mesh);
+					String meshIdentifier = getOrCreateItem("MeshTerm", meshId);
+					diseaseConcept.addToCollection("terms", meshIdentifier);
 				}
 				prevIdentifier = identifier;
 			}
@@ -105,29 +105,22 @@ public class UmlsConverter extends BioFileConverter
 			}
 		}
 	}
-	@Override
-	public Integer store(Item item) throws ObjectStoreException {
-		Object id = item.hasAttribute("identifier")?item.getAttribute("identifier").getValue():"";
-		System.out.println(item.getClassName() +":"+item.getIdentifier()+":" + id);
+	private HashMap<String,HashMap<String,String>> itemSet = new HashMap<String, HashMap<String,String>>();
 
-		return super.store(item);
-	}
-	private HashMap<String,HashMap<String,Item>> itemSet = new HashMap<String, HashMap<String,Item>>();
-
-	private Item getOrCreateItem(String dbName,String identifier) throws ObjectStoreException {
-		HashMap<String, Item> hashMap = itemSet.get(dbName);
+	private String getOrCreateItem(String dbName,String identifier) throws ObjectStoreException {
+		HashMap<String, String> hashMap = itemSet.get(dbName);
 		if(hashMap==null) {
-			hashMap = new HashMap<String, Item>();
+			hashMap = new HashMap<String, String>();
 			itemSet.put(dbName, hashMap);
 		}
-		Item item = hashMap.get(identifier);
-		if(item==null) {
-			item = createItem(dbName);
+		String termIdentifier = hashMap.get(identifier);
+		if(termIdentifier==null) {
+			Item item = createItem(dbName);
 			item.setAttribute("identifier", identifier);
 			store(item);
-			hashMap.put(identifier, item);
+			hashMap.put(identifier, item.getIdentifier());
 		}
-		return item;
+		return termIdentifier;
 	}
 	private String osAlias = null;
 
