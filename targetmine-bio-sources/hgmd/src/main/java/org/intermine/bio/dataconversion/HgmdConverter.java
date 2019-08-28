@@ -84,9 +84,9 @@ public class HgmdConverter extends BioDBConverter
     public void process() throws Exception {
         getSnpIds();
         getSnpFunctionNames();
+        getUMLSDisease();
 
         // a database has been initialised from properties starting with db.hgmd
-
         Connection connection = getDatabase().getConnection();
 
         Statement stmt = connection.createStatement();
