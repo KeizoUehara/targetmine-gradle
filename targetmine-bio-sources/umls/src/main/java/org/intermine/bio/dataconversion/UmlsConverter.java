@@ -68,9 +68,10 @@ public class UmlsConverter extends BioFileConverter
 			Item diseaseConcept = null;
 			while((umls = parser.getNext())!=null) {
 				String identifier = umls.getIdentifier();
-				if(diseaseConcept != null && !identifier.equals(diseaseConcept.getIdentifier())) {
-					store(diseaseConcept);
-				}else {
+				if(diseaseConcept == null || !identifier.equals(diseaseConcept.getIdentifier())) {
+					if(diseaseConcept!=null) {
+						store(diseaseConcept);
+					}
 					diseaseConcept = createItem("DiseaseConcept");
 					diseaseConcept.setAttribute("identifier",identifier);
 					String name = umls.getName();
@@ -79,7 +80,7 @@ public class UmlsConverter extends BioFileConverter
 					Item umlsTerm = createItem("UMLSTerm");
 					umlsTerm.setAttribute("identifier",identifier);
 					umlsTerm.setAttribute("name",name);
-					umlsTerm.setReference("ontology", getOntology("MeSH"));
+					umlsTerm.setReference("ontology", getOntology("UMLS"));
 
 					diseaseConcept.addToCollection("terms", umlsTerm);
 					store(umlsTerm);
