@@ -277,7 +277,7 @@ public class HgmdConverter extends BioDBConverter
         LOG.warn("getUmlses : cui " + cui);
 
         // Publication set only pubMedId.
-        Item item = createItem("UMLSDisease");
+        Item item = createItem("UMLSTerm");
         item.setAttribute("identifier", cui);
         item.setReference("hgmds", hgmds);
         store(item);
@@ -357,7 +357,7 @@ public class HgmdConverter extends BioDBConverter
 
         Query q = new Query();
         QueryClass qcUMLSDisease = new QueryClass(os.getModel().
-                getClassDescriptorByName("UMLSDisease").getType());
+                getClassDescriptorByName("UMLSTerm").getType());
 
         q.addFrom(qcUMLSDisease);
         q.addToSelect(qcUMLSDisease);
