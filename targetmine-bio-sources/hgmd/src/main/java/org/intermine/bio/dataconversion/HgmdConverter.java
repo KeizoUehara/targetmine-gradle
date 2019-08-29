@@ -152,6 +152,8 @@ public class HgmdConverter extends BioDBConverter
                 "hgmd_phenbase.hgmd_mutation.phen_id = hgmd_phenbase.phenotype_concept.phen_id " +
                 ";";
         ResultSet resCui = stmt.executeQuery(queryCui);
+
+        Map<String, Set<String>> hgmdsUmlsesMap = new HashMap<String, Set<String>>();
         while (resCui.next()) {
             // get Hgmd ref
             // hgmd にdbsnpがあればそのまま使用、なければacc_numで代用
@@ -165,12 +167,20 @@ public class HgmdConverter extends BioDBConverter
             LOG.info("getCui : cui = " + cui + ", hgmdRed = " + hgmdRef);
             // hgmd がnullでなく、cuiに一致するデータがumlsにある場合
             if(!StringUtils.isEmpty(hgmdRef) && umlsDiseaseSet.contains(cui)){
-                Item item = createItem("UMLSTerm");
-                item.setAttribute("identifier", cui);
-                item.addToCollection("hgmds", hgmdRef);
-                store(item);
-                LOG.info("UMLSDisease identifier : " + item.getIdentifier());
+                if (hgmdsUmlsesMap.get(cui) == null) {
+                    hgmdsUmlsesMap.put(cui, new HashSet<String>());
+                }
+                hgmdsUmlsesMap.get(cui).add(hgmdRef);
             }
+        }
+        // create HGMD and UMLSTerm
+        for (String cui : hgmdsUmlsesMap.keySet()) {
+            Item item = createItem("UMLSTerm");
+            item.setAttribute("identifier", cui);
+            item.setCollection("hgmds", new ArrayList<String>(hgmdsUmlsesMap.get(cui)));
+            store(item);
+            LOG.info("UMLSDisease cui = "+ cui + ", identifier : " + item.getIdentifier());
+            store(item);
         }
         stmt.close();
         connection.close();
