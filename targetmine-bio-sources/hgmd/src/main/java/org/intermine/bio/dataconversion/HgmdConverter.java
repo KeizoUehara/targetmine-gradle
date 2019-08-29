@@ -173,12 +173,13 @@ public class HgmdConverter extends BioDBConverter
             }
         }
         // create HGMD and UMLSTerm
+        Integer count = 0;
         for (String cui : hgmdsUmlsesMap.keySet()) {
+            count++;
+            LOG.info("UMLSDisease count : " + count + ", cui : " + cui);
             Item item = createItem("UMLSTerm");
             item.setAttribute("identifier", cui);
             item.setCollection("hgmds", new ArrayList<String>(hgmdsUmlsesMap.get(cui)));
-            store(item);
-            LOG.info("UMLSDisease cui = "+ cui + ", identifier : " + item.getIdentifier());
             store(item);
         }
         stmt.close();
