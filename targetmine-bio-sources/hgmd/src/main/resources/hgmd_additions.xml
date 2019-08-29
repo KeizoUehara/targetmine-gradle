@@ -8,7 +8,7 @@
         <attribute name="description" type="java.lang.String"/>
         <attribute name="variantClass" type="java.lang.String"/>
         <collection name="sNP" referenced-type="SNP" reverse-reference="hgmd"/>
-        <collection name="umlses"  referenced-type="UMLSDisease" reverse-reference="hgmds"/>
+        <collection name="umlses"  referenced-type="UMLSTerm" reverse-reference="hgmds"/>
         <collection name="publications" referenced-type="Publication" reverse-reference="hgmd"/>
     </class>
     <class name="UMLSTerm" is-interface="true">
