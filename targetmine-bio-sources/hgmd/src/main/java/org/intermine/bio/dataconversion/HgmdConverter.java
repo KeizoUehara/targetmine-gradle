@@ -165,7 +165,7 @@ public class HgmdConverter extends BioDBConverter
             LOG.info("getCui : cui = " + cui + ", hgmdRed = " + hgmdRef);
             // hgmd がnullでなく、cuiに一致するデータがumlsにある場合
             if(!StringUtils.isEmpty(hgmdRef) && umlsDiseaseSet.contains(cui)){
-                Item item = createItem("UMLSDisease");
+                Item item = createItem("UMLSTerm");
                 item.setAttribute("identifier", cui);
                 item.addToCollection("hgmds", hgmdRef);
                 store(item);
