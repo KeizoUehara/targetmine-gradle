@@ -33,10 +33,10 @@ import java.util.*;
  * Integrate dbsnp in advance.
  * Read hgmd database in mysql.
  * mysql db setting wrote '~/.intermine/targetmine.properties'.
+ *
  * @author
  */
-public class HgmdConverter extends BioDBConverter
-{
+public class HgmdConverter extends BioDBConverter {
     private static final Logger LOG = LogManager.getLogger(HgmdConverter.class);
     // 
     private static final String DATASET_TITLE = "hgmd";
@@ -54,9 +54,10 @@ public class HgmdConverter extends BioDBConverter
 
     private Map<String, String> snpFunctionNameMap = new HashMap<String, String>();
     private Set<String> snpFunctionNameSet = new HashSet<String>();
-    private Set<String> umlsDiseaseSet = new HashSet<String>();
+    private Set<String> umlsTermSet = new HashSet<String>();
 
     private static Map<String, String> mutypeToSnpFunctionNames = new HashMap<String, String>();
+
     static {
         Map<String, String> p = new HashMap<>();
         // key:hgmd_pro.allmut.mutype , value:snpfunction.name
@@ -69,9 +70,10 @@ public class HgmdConverter extends BioDBConverter
 
     /**
      * Construct a new HgmdConverter.
+     *
      * @param database the database to read from
-     * @param model the Model used by the object store we will write to with the ItemWriter
-     * @param writer an ItemWriter used to handle Items created
+     * @param model    the Model used by the object store we will write to with the ItemWriter
+     * @param writer   an ItemWriter used to handle Items created
      */
     public HgmdConverter(Database database, Model model, ItemWriter writer) {
         super(database, model, writer, DATA_SOURCE_NAME, DATASET_TITLE);
@@ -84,7 +86,7 @@ public class HgmdConverter extends BioDBConverter
     public void process() throws Exception {
         getSnpIds();
         getSnpFunctionNames();
-        getUMLSDisease();
+        getUMLSTerm();
 
         // a database has been initialised from properties starting with db.hgmd
         Connection connection = getDatabase().getConnection();
@@ -95,14 +97,8 @@ public class HgmdConverter extends BioDBConverter
         String queryAllmut = "select * from hgmd_pro.allmut " +
                 "LEFT JOIN hgmd_pro.mutnomen ON " +
                 "hgmd_pro.allmut.acc_num = hgmd_pro.mutnomen.acc_num " +
+                ";";
 
-//                "LEFT JOIN hgmd_phenbase.hgmd_mutation ON " +
-//                "hgmd_pro.allmut.acc_num = hgmd_phenbase.hgmd_mutation.acc_num " +
-//                "LEFT JOIN hgmd_phenbase.phenotype_concept ON " +
-//                "hgmd_phenbase.hgmd_mutation.phen_id = hgmd_phenbase.phenotype_concept.phen_id " +
-//                // TODO : debug
-//                "limit 10 " +
-                        ";";
         ResultSet resAllmut = stmt.executeQuery(queryAllmut);
         while (resAllmut.next()) {
             // hgmd data input. return hgmd id.
@@ -114,24 +110,20 @@ public class HgmdConverter extends BioDBConverter
             // snp data input & reference hgmd. return snpId.
             // hgmd にdbsnpがあればそのまま使用、なければacc_numで代用
             String snpId = resAllmut.getString("dbsnp");
-            LOG.info("getSnp : dbsnp identifier " + snpId);
-            if(StringUtils.isEmpty(snpId)) {
+            if (StringUtils.isEmpty(snpId)) {
                 snpId = resAllmut.getString("acc_num");
-                LOG.info("getSnp : accnum identifier " + snpId);
             }
             String snpRef = getSnp(resAllmut, snpId, hgmdId);
             // if hgmd contains dbsnp, only set reference snpid. else set snp and other data.
-            if(!snpIdSet.contains(snpId)) {
+            if (!snpIdSet.contains(snpId)) {
                 // SNPFunction data input. return SNPFunctionId.
                 String snpFunctionRef = getOrCreateSnpFunction(resAllmut);
-                LOG.info("snpFunctionRef : " + snpFunctionRef );
-
                 // get GeneId.
                 String geneId = getGenePrimaryId(resAllmut);
                 String geneRef = getGene(geneId);
 
                 // get variationAnnotation
-                if(StringUtils.isEmpty(geneId)) geneId = "0";
+                if (StringUtils.isEmpty(geneId)) geneId = "0";
                 String variationId = combineString(snpId, geneId, "-");
                 // VariationAnnotaition data input & reference geneId, SNPFunctionId, SNPId. return VariationAnnotation id.
                 String variationAnnotationRef = getVariationAnnotation(variationId, geneRef, snpFunctionRef, snpRef);
@@ -142,7 +134,7 @@ public class HgmdConverter extends BioDBConverter
 
         }
 
-        String queryCui = "select hgmd_pro.allmut.acc_num AS acc_num, "+
+        String queryCui = "select hgmd_pro.allmut.acc_num AS acc_num, " +
                 "hgmd_pro.allmut.dbsnp AS dbsnp," +
                 "hgmd_phenbase.phenotype_concept.cui AS cui " +
                 "from hgmd_pro.allmut " +
@@ -157,15 +149,13 @@ public class HgmdConverter extends BioDBConverter
             // get Hgmd ref
             // hgmd にdbsnpがあればそのまま使用、なければacc_numで代用
             String snpId = resCui.getString("dbsnp");
-            if(StringUtils.isEmpty(snpId)) {
+            if (StringUtils.isEmpty(snpId)) {
                 snpId = resCui.getString("acc_num");
-                LOG.info("getSnp : accnum identifier = " + snpId);
             }
             String cui = resCui.getString("cui");
             String hgmdRef = hgmdMap.get(snpId);
-            LOG.info("getCui : cui = " + cui + ", hgmdRed = " + hgmdRef);
             // hgmd がnullでなく、cuiに一致するデータがumlsにある場合
-            if(!StringUtils.isEmpty(hgmdRef) && umlsDiseaseSet.contains(cui)){
+            if (!StringUtils.isEmpty(hgmdRef) && umlsTermSet.contains(cui)) {
                 if (hgmdsUmlsesMap.get(cui) == null) {
                     hgmdsUmlsesMap.put(cui, new HashSet<String>());
                 }
@@ -173,10 +163,7 @@ public class HgmdConverter extends BioDBConverter
             }
         }
         // create HGMD and UMLSTerm
-        Integer count = 0;
         for (String cui : hgmdsUmlsesMap.keySet()) {
-            count++;
-            LOG.info("UMLSDisease count : " + count + ", cui : " + cui);
             Item item = createItem("UMLSTerm");
             item.setAttribute("identifier", cui);
             item.setCollection("hgmds", new ArrayList<String>(hgmdsUmlsesMap.get(cui)));
@@ -192,12 +179,11 @@ public class HgmdConverter extends BioDBConverter
         String variantClass = response.getString("tag");
 
         String ret = hgmdMap.get(identifier);
-        if(ret == null) {
+        if (ret == null) {
             Item item = createItem("Hgmd");
             item.setAttribute("identifier", identifier);
             item.setAttribute("description", description);
             item.setAttribute("variantClass", variantClass);
-//        item.addToCollection("umlses", getUmlses(response));
             store(item);
             ret = item.getIdentifier();
             hgmdMap.put(identifier, ret);
@@ -210,9 +196,7 @@ public class HgmdConverter extends BioDBConverter
         if (StringUtils.isEmpty(pubMedId)) {
             return "";
         }
-        LOG.warn("getPublication : " + pubMedId );
         String ret = publicationMap.get(pubMedId);
-
         if (ret == null) {
             // Publication set only pubMedId.
             Item item = createItem("Publication");
@@ -220,7 +204,6 @@ public class HgmdConverter extends BioDBConverter
             item.setReference("hgmd", hgmdId);
             store(item);
             ret = item.getIdentifier();
-            LOG.warn(" getPublication : pubmedid = "+ pubMedId +"publication identifer " + ret);
             geneMap.put(pubMedId, ret);
         }
         return ret;
@@ -229,11 +212,11 @@ public class HgmdConverter extends BioDBConverter
     private String getSnp(ResultSet response, String identifier, String hgmdId) throws Exception {
         String ret = snpMap.get(identifier);
 
-        if(ret == null) {
+        if (ret == null) {
             Item item = createItem("SNP");
 
             // hgmd にdbsnpのIDが入っていればSNP にリンクを張る。
-            if(snpIdSet.contains(identifier)) {
+            if (snpIdSet.contains(identifier)) {
                 // itemへのstore後のidを取得したいため、identifierのみ設定
                 item.setAttribute("identifier", identifier);
             } else {
@@ -244,18 +227,13 @@ public class HgmdConverter extends BioDBConverter
                 String location = combineString(chromosome, coodStart, ":");
                 // TODO: データの作り方 要確認 : allmut.hgvsまたはallmut.deletionまたはallmut.insertion
                 String refSnpAllele = "";
-                if(!StringUtils.isEmpty(response.getString("hgvs"))) {
+                if (!StringUtils.isEmpty(response.getString("hgvs"))) {
                     refSnpAllele = response.getString("hgvs");
-                    LOG.info("getSnp : hgvs refSnpAllele " + refSnpAllele);
-                }else if(!StringUtils.isEmpty(response.getString("deletion"))) {
+                } else if (!StringUtils.isEmpty(response.getString("deletion"))) {
                     refSnpAllele = response.getString("deletion");
-                    LOG.info("getSnp : deletion refSnpAllele " + refSnpAllele);
-                }else if(!StringUtils.isEmpty(response.getString("insertion"))) {
+                } else if (!StringUtils.isEmpty(response.getString("insertion"))) {
                     refSnpAllele = response.getString("insertion");
-                    LOG.info("getSnp : insertion refSnpAllele " + refSnpAllele);
                 }
-                LOG.info("getSnp : coodStart " + coodStart);
-                LOG.info("getSnp : chromosome " + chromosome);
                 // TODO: データの作り方　要確認 :  ?
                 String orientation = "";
 
@@ -279,28 +257,24 @@ public class HgmdConverter extends BioDBConverter
             snpMap.put(identifier, ret);
         }
 
-        LOG.warn("getSnp : ret " + ret);
         return ret;
     }
 
     private String getUmlses(String cui, String hgmds) throws Exception {
-        LOG.warn("getUmlses : cui " + cui);
-
         // Publication set only pubMedId.
         Item item = createItem("UMLSTerm");
         item.setAttribute("identifier", cui);
         item.setReference("hgmds", hgmds);
         store(item);
-        LOG.warn(" getUmlses : identifier = "+ cui);
         return item.getIdentifier();
     }
 
     /**
      * DB read SNP column "identifier".
+     *
      * @throws Exception
      */
     private void getSnpIds() throws Exception {
-        LOG.info("Start loading snp identifiers");
         ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
 
         Query q = new Query();
@@ -313,21 +287,18 @@ public class HgmdConverter extends BioDBConverter
         Results results = os.execute(q);
         Iterator<Object> iterator = results.iterator();
 
-        LOG.info("SNP iterator before" );
         while (iterator.hasNext()) {
             ResultsRow<String> rr = (ResultsRow<String>) iterator.next();
             snpIdSet.add(rr.get(0));
-            LOG.info(" loaded snp { id : " + rr.get(0) + "}" );
         }
-        LOG.info("loaded "+ snpIdSet.size()+" SNP (size)" );
     }
 
     /**
      * DB read SNPFunction column "name".
+     *
      * @throws Exception
      */
     private void getSnpFunctionNames() throws Exception {
-        LOG.info("Start loading snpfunction name");
         ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
 
         Query q = new Query();
@@ -340,92 +311,76 @@ public class HgmdConverter extends BioDBConverter
         Results results = os.execute(q);
         Iterator<Object> iterator = results.iterator();
 
-        LOG.info("iterator before" );
         while (iterator.hasNext()) {
-            LOG.info("iterator start" );
             ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
             InterMineObject p = rr.get(0);
 
-            LOG.info("InterMineObject { p :"+ p + "}" );
             String name = (String) p.getFieldValue("name");
-            LOG.info(" loaded snpFunction { name : " + name + "}" );
-
             if (name != null) {
                 snpFunctionNameSet.add(name);
             }
         }
-        LOG.info("loaded "+ snpFunctionNameSet.size()+" snpFunction (size)" );
     }
 
     /**
-     * DB read UMLSDisease column "identifier".
+     * DB read UMLSTerm column "identifier".
+     *
      * @throws Exception
      */
-    private void getUMLSDisease() throws Exception {
-        LOG.info("Start loading UMLSDisease identifier");
+    private void getUMLSTerm() throws Exception {
         ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
 
         Query q = new Query();
-        QueryClass qcUMLSDisease = new QueryClass(os.getModel().
+        QueryClass qcUMLSTerm = new QueryClass(os.getModel().
                 getClassDescriptorByName("UMLSTerm").getType());
 
-        q.addFrom(qcUMLSDisease);
-        q.addToSelect(qcUMLSDisease);
+        q.addFrom(qcUMLSTerm);
+        q.addToSelect(qcUMLSTerm);
 
         Results results = os.execute(q);
         Iterator<Object> iterator = results.iterator();
 
-        LOG.info("iterator before" );
         while (iterator.hasNext()) {
-            LOG.info("iterator start" );
             ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
             InterMineObject p = rr.get(0);
 
-            LOG.info("InterMineObject { p :"+ p + "}" );
             String name = (String) p.getFieldValue("identifier");
-            LOG.info(" loaded UMLSDisease { name : " + name + "}" );
-
             if (name != null) {
-                umlsDiseaseSet.add(name);
+                umlsTermSet.add(name);
             }
         }
-        LOG.info("loaded "+ umlsDiseaseSet.size()+" umlsDisease (size)" );
     }
 
     private String getOrCreateSnpFunction(ResultSet response) throws Exception {
         String mutype = response.getString("mutype");
 
-        if(StringUtils.isEmpty(mutype)) {
-            LOG.info("SNPFunction is Emptiy.");
+        if (StringUtils.isEmpty(mutype)) {
             return "";
         }
 
         // mapping mutype -> snpfunction name.
         String snpFunctionName = mutypeToSnpFunctionNames.get(mutype);
-        if(snpFunctionName == null) {
+        if (snpFunctionName == null) {
             // not mapping. use mutype.
             snpFunctionName = mutype;
         }
 
         String ret = snpFunctionNameMap.get(snpFunctionName);
-        if(ret == null) {
+        if (ret == null) {
             // create item.
             Item item = createItem("SNPFunction");
             item.setAttribute("name", snpFunctionName);
             store(item);
             ret = item.getIdentifier();
-            LOG.info(" create SNPFunction! name = "+ snpFunctionName + "item identifier = " + ret);
             snpFunctionNameMap.put(snpFunctionName, item.getIdentifier());
         }
-
-        LOG.info(" snpfunction() end. getIdentifier = " + ret);
         return ret;
     }
 
     private String getGenePrimaryId(ResultSet response) throws Exception {
         // get refCore
         String refCore = response.getString("refCORE");
-        if(StringUtils.isEmpty(refCore)){
+        if (StringUtils.isEmpty(refCore)) {
             return "";
         }
 
@@ -439,7 +394,6 @@ public class HgmdConverter extends BioDBConverter
     private Map<String, String> getSynonymSubject(String refCore) throws Exception {
         Map<String, String> synonymSubjectIdMap = new HashMap();
 
-        LOG.info("Start loading synonym. refCore : " + refCore);
         ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
 
         Query q = new Query();
@@ -455,65 +409,22 @@ public class HgmdConverter extends BioDBConverter
         Results results = os.execute(q);
         Iterator<Object> iterator = results.iterator();
 
-        LOG.info("iterator before" );
         while (iterator.hasNext()) {
             ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
             InterMineObject p = rr.get(0);
 
-            LOG.info("InterMineObject { p :"+ p + "}" );
-            String interMineValue = (String) p.getFieldValue("value");
             // synonym.subject is 'gene' Item, get subject.
-            InterMineObject geneItem = (InterMineObject)p.getFieldValue("subject");
+            InterMineObject geneItem = (InterMineObject) p.getFieldValue("subject");
             String genePrimaryId = (String) geneItem.getFieldValue("primaryIdentifier");
-            LOG.info(" loaded snpFunction { interMineValue : " + interMineValue + ",genePrimaryId : " + genePrimaryId + "}" );
             if (genePrimaryId != null) {
                 synonymSubjectIdMap.put(refCore, genePrimaryId);
             }
         }
-        LOG.info("loaded "+ synonymSubjectIdMap.size()+" getSynonymItem (size)" );
         return synonymSubjectIdMap;
     }
 
-//    private Set<String> getGeneId(String geneId) throws Exception {
-//        Set<String> geneIdSet = new HashSet<String>();
-//
-//        LOG.info("Start loading gene");
-//        ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
-//
-//        Query q = new Query();
-//        QueryClass qcGene = new QueryClass(os.getModel().
-//                getClassDescriptorByName("Gene").getType());
-//
-//        q.addFrom(qcGene);
-//        QueryField qcGeneId = new QueryField(qcGene, "id");
-//        q.addToSelect(qcGeneId);
-//
-//        SimpleConstraint sc = new SimpleConstraint(qcGeneId, ConstraintOp.EQUALS, new QueryValue(geneId));
-//        q.setConstraint(sc);
-//
-//        Results results = os.execute(q);
-//        Iterator<Object> iterator = results.iterator();
-//
-//        LOG.info("iterator before" );
-//        while (iterator.hasNext()) {
-//            ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
-//            InterMineObject p = rr.get(0);
-//
-//            LOG.info("InterMineObject { p :"+ p + "}" );
-//            Integer id = (Integer) p.getFieldValue("id");
-//            LOG.info(" loaded snpFunction { intermineValue : " + id + "}" );
-//
-//            if (id != null) {
-//                geneIdSet.add(id.toString());
-//            }
-//        }
-//        LOG.info("loaded "+ geneIdSet.size()+" getGeneId (size)" );
-//        return  geneIdSet;
-//
-//    }
-
     private String getGene(String primaryIdentifier) throws ObjectStoreException {
-        if(StringUtils.isEmpty(primaryIdentifier)) {
+        if (StringUtils.isEmpty(primaryIdentifier)) {
             return "";
         }
         String ret = geneMap.get(primaryIdentifier);
@@ -530,23 +441,21 @@ public class HgmdConverter extends BioDBConverter
     }
 
     private String getVariationAnnotation(String variationId, String geneRef, String functionRef, String snpRef) throws ObjectStoreException {
-        LOG.info("getVariationAnnotation : identifier = " + variationId);
         String ret = variationAnnotationMap.get(variationId);
-        if(ret == null) {
+        if (ret == null) {
             Item item = createItem("VariationAnnotation");
             item.setAttribute("identifier", variationId);
-            if(!StringUtils.isEmpty(geneRef)) {
+            if (!StringUtils.isEmpty(geneRef)) {
                 item.setReference("gene", geneRef);
             }
-            if(!StringUtils.isEmpty(functionRef)) {
+            if (!StringUtils.isEmpty(functionRef)) {
                 item.setReference("function", functionRef);
             }
-            if(!StringUtils.isEmpty(snpRef)) {
+            if (!StringUtils.isEmpty(snpRef)) {
                 item.setReference("snp", snpRef);
             }
             store(item);
             ret = item.getIdentifier();
-            LOG.info("getVariationAnnotation : OK. identifier = " + ret);
             variationAnnotationMap.put(variationId, ret);
         }
         return ret;
@@ -559,7 +468,7 @@ public class HgmdConverter extends BioDBConverter
         String orientation = ""; // TODO: データの作り方?
         String allele = combineString(response.getString("wildBASE"), response.getString("mutBASE"), " -> "); // TODO: 文字列結合の方法?
         String codon = ""; // TODO: データの作り方?
-        String proteinAcc = combineString(response.getString("protCORE"), response.getString("protVER"),"."); // TODO: 文字列結合の方法?
+        String proteinAcc = combineString(response.getString("protCORE"), response.getString("protVER"), "."); // TODO: 文字列結合の方法?
         int aaPos = response.getInt("codon");
         String residue = combineString(response.getString("wildAMINO"), response.getString("mutAMINO"), " -> "); // TODO: 文字列結合の方法?
         String funcRef = snpFunctionRef;
@@ -571,17 +480,6 @@ public class HgmdConverter extends BioDBConverter
     private String createSNPReference(String mrnaAcc, String mrnaPos, String orientation,
                                       String allele, String codon, String proteinAcc, int aaPos, String residue,
                                       String funcRef, String vaItemRef) throws ObjectStoreException {
-        LOG.info("createSNPReference : mrnaAcc = " + mrnaAcc
-                + ", mrnaPos = " + mrnaPos
-                + ", orientation = " + orientation
-                + ", allele = " + allele
-                + ", codon = " + codon
-                + ", proteinAcc = " + proteinAcc
-                + ", aaPos = " + aaPos
-                + ", residue = " + residue
-                + ", funcRef = " + funcRef
-                + ", vaItemRef = " + vaItemRef
-        );
         Item item = createItem("SNPReference");
         if (!StringUtils.isEmpty(mrnaAcc)) {
             item.setAttribute("mrnaAccession", mrnaAcc);
@@ -621,10 +519,9 @@ public class HgmdConverter extends BioDBConverter
 
     private String combineString(String str1, String str2, String combineStr) {
         String str = "";
-        if(!StringUtils.isEmpty(str1) && !StringUtils.isEmpty(str2)) {
+        if (!StringUtils.isEmpty(str1) && !StringUtils.isEmpty(str2)) {
             str = str1 + combineStr + str2;
-        }
-        else if (!StringUtils.isEmpty(str1) && StringUtils.isEmpty(str2)) {
+        } else if (!StringUtils.isEmpty(str1) && StringUtils.isEmpty(str2)) {
             str = str1;
         } else if (StringUtils.isEmpty(str1) && !StringUtils.isEmpty(str2)) {
             str = str2;
