@@ -227,14 +227,17 @@ public class HgmdConverter extends BioDBConverter {
                 String refSnpAllele = "";
                 if (!StringUtils.isEmpty(response.getString("hgvs"))) {
                     refSnpAllele = response.getString("hgvs");
+                    LOG.info("hgvs : " + refSnpAllele);
                 } else if (!StringUtils.isEmpty(response.getString("deletion"))) {
                     refSnpAllele = response.getString("deletion");
+                    LOG.info("del : " + refSnpAllele);
                 } else if (!StringUtils.isEmpty(response.getString("insertion"))) {
                     refSnpAllele = response.getString("insertion");
+                    LOG.info("insertion : " + refSnpAllele);
                 } else {
                     // hgvs, deletion, insertion が無ければ SNPではなく、Variant にデータを登録
                     item = createItem("Variant");
-
+                    LOG.info("variant ");
                     String variantId = response.getString("acc_num");
                     String description = response.getString("descr");
                     item.setAttribute("identifier", variantId);
@@ -261,6 +264,7 @@ public class HgmdConverter extends BioDBConverter {
                     item.setAttribute("orientation", orientation);
                 }
             }
+            LOG.info("hgmd id = " + hgmdId);
             item.setReference("hgmd", hgmdId);
             store(item);
             ret = item.getIdentifier();

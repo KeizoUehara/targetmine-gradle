@@ -7,7 +7,7 @@
         <attribute name="identifier" type="java.lang.String"/>
         <attribute name="description" type="java.lang.String"/>
         <attribute name="variantClass" type="java.lang.String"/>
-        <collection name="sNP" referenced-type="SNP" reverse-reference="hgmd"/>
+        <collection name="sNP" referenced-type="Variant" reverse-reference="hgmd"/>
         <collection name="umlses"  referenced-type="UMLSTerm" reverse-reference="hgmds"/>
         <collection name="publications" referenced-type="Publication" reverse-reference="hgmd"/>
     </class>
@@ -28,6 +28,8 @@
     <class name="Variant" is-interface="true">
         <attribute name="identifier" type="java.lang.String"/>
         <attribute name="description" type="java.lang.String"/>
+        <reference name="hgmd" referenced-type="Hgmd" reverse-reference="sNP"/>
+        <collection name="relatedGenes" referenced-type="VariationAnnotation" reverse-reference="snp"/>
     </class>
 
     <class name="SNP" extends="Variant" is-interface="true">
@@ -36,8 +38,6 @@
         <attribute name="orientation" type="java.lang.String"/>
         <attribute name="chromosome" type="java.lang.String"/>
         <attribute name="location" type="java.lang.String"/>
-        <reference name="hgmd" referenced-type="Hgmd" reverse-reference="sNP"/>
-        <collection name="relatedGenes" referenced-type="VariationAnnotation" reverse-reference="snp"/>
         <!--<collection name="dataSets" referenced-type="DataSet"/>-->
     </class>
     <class name="Publication" is-interface="true">
@@ -48,7 +48,7 @@
     <class name="VariationAnnotation" is-interface="true">
         <attribute name="identifier" type="java.lang.String"/>
         <reference name="gene" referenced-type="Gene" reverse-reference="snps"/>
-        <reference name="snp" referenced-type="SNP" reverse-reference="relatedGenes"/>
+        <reference name="snp" referenced-type="Variant" reverse-reference="relatedGenes"/>
         <collection name="references" referenced-type="SNPReference" reverse-reference="annotation"/>
         <reference name="function" referenced-type="SNPFunction"/>
     </class>
