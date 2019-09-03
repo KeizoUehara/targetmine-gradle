@@ -221,10 +221,8 @@ public class HgmdConverter extends BioDBConverter {
                 item.setAttribute("identifier", identifier);
             } else {
                 // 無い場合はhgmdのデータを利用してSNPの情報を埋める
-                String coodStart = response.getString("startCoord");
-                String chromosome = response.getString("chromosome");
-                // TODO: データの作り方 要確認 : allmut.chromosomeとallmut.coordSTART
-                String location = combineString(chromosome, coodStart, ":");
+                item.setAttribute("identifier", identifier);
+
                 // TODO: データの作り方 要確認 : allmut.hgvsまたはallmut.deletionまたはallmut.insertion
                 String refSnpAllele = "";
                 if (!StringUtils.isEmpty(response.getString("hgvs"))) {
@@ -233,11 +231,23 @@ public class HgmdConverter extends BioDBConverter {
                     refSnpAllele = response.getString("deletion");
                 } else if (!StringUtils.isEmpty(response.getString("insertion"))) {
                     refSnpAllele = response.getString("insertion");
+                } else {
+                    // hgvs, deletion, insertion が無ければ SNPではなく、Variant にデータを登録
+                    item = createItem("Variant");
+
+                    String variantId = response.getString("acc_num");
+                    String description = response.getString("descr");
+                    item.setAttribute("identifier", variantId);
+                    item.setAttribute("description", description);
                 }
+
+                String coodStart = response.getString("startCoord");
+                String chromosome = response.getString("chromosome");
+                // TODO: データの作り方 要確認 : allmut.chromosomeとallmut.coordSTART
+                String location = combineString(chromosome, coodStart, ":");
                 // TODO: データの作り方　要確認 :  ?
                 String orientation = "";
 
-                item.setAttribute("identifier", identifier);
                 if (!StringUtils.isEmpty(location)) {
                     item.setAttribute("location", location);
                 }

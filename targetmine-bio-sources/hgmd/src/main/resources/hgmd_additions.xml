@@ -25,7 +25,12 @@
         <collection name="snps" referenced-type="VariationAnnotation" reverse-reference="gene"/>
     </class>
 
-    <class name="SNP" is-interface="true">
+    <class name="Variant" is-interface="true">
+        <attribute name="identifier" type="java.lang.String"/>
+        <attribute name="description" type="java.lang.String"/>
+    </class>
+
+    <class name="SNP" extends="Variant" is-interface="true">
         <attribute name="identifier" type="java.lang.String"/>
         <attribute name="refSnpAllele" type="java.lang.String"/>
         <attribute name="orientation" type="java.lang.String"/>
