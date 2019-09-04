@@ -237,7 +237,7 @@ public class HgmdConverter extends BioDBConverter {
                 } else {
                     // hgvs, deletion, insertion が無ければ SNPではなく、Variant にデータを登録
                     item = createItem("Variant");
-                    LOG.info("variant ");
+                    LOG.info("variant");
                     String variantId = response.getString("acc_num");
                     String description = response.getString("descr");
                     item.setAttribute("identifier", variantId);
