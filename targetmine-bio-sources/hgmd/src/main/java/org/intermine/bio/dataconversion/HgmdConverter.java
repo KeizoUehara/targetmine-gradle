@@ -242,6 +242,12 @@ public class HgmdConverter extends BioDBConverter {
                     String description = response.getString("descr");
                     item.setAttribute("identifier", variantId);
                     item.setAttribute("description", description);
+                    LOG.info("hgmd id = " + hgmdId);
+                    item.setReference("hgmd", hgmdId);
+                    store(item);
+                    ret = item.getIdentifier();
+                    snpMap.put(identifier, ret);
+                    return ret;
                 }
 
                 String coodStart = response.getString("startCoord");
