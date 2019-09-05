@@ -204,7 +204,7 @@ public class HgmdConverter extends BioDBConverter {
             item.setReference("hgmd", hgmdId);
             store(item);
             ret = item.getIdentifier();
-            geneMap.put(pubMedId, ret);
+            publicationMap.put(pubMedId, ret);
         }
         return ret;
     }
