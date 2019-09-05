@@ -84,17 +84,17 @@ public class HgmdConverter extends BioDBConverter {
      * {@inheritDoc}
      */
     public void process() throws Exception {
+        // Get data already registered in other Converter.
         getSnpIds();
         getSnpFunctionNames();
         getUMLSTerm();
 
         // a database has been initialised from properties starting with db.hgmd
         Connection connection = getDatabase().getConnection();
-
         Statement stmt = connection.createStatement();
 
         // TODO: SQL 要確認
-        String queryAllmut = "select * from hgmd_pro.allmut " +
+        String queryAllmut = "SELECT * from hgmd_pro.allmut " +
                 "LEFT JOIN hgmd_pro.mutnomen ON " +
                 "hgmd_pro.allmut.acc_num = hgmd_pro.mutnomen.acc_num " +
                 ";";
@@ -134,10 +134,10 @@ public class HgmdConverter extends BioDBConverter {
 
         }
 
-        String queryCui = "select hgmd_pro.allmut.acc_num AS acc_num, " +
+        String queryCui = "SELECT hgmd_pro.allmut.acc_num AS acc_num, " +
                 "hgmd_pro.allmut.dbsnp AS dbsnp," +
                 "hgmd_phenbase.phenotype_concept.cui AS cui " +
-                "from hgmd_pro.allmut " +
+                "FROM hgmd_pro.allmut " +
                 "JOIN hgmd_phenbase.hgmd_mutation ON " +
                 "hgmd_pro.allmut.acc_num = hgmd_phenbase.hgmd_mutation.acc_num " +
                 "JOIN hgmd_phenbase.phenotype_concept ON " +
@@ -164,10 +164,7 @@ public class HgmdConverter extends BioDBConverter {
         }
         // create HGMD and UMLSTerm
         for (String cui : hgmdsUmlsesMap.keySet()) {
-            Item item = createItem("UMLSTerm");
-            item.setAttribute("identifier", cui);
-            item.setCollection("hgmds", new ArrayList<String>(hgmdsUmlsesMap.get(cui)));
-            store(item);
+            getUmlses(cui, new ArrayList<String>(hgmdsUmlsesMap.get(cui)));
         }
         stmt.close();
         connection.close();
@@ -227,22 +224,17 @@ public class HgmdConverter extends BioDBConverter {
                 String refSnpAllele = "";
                 if (!StringUtils.isEmpty(response.getString("hgvs"))) {
                     refSnpAllele = response.getString("hgvs");
-                    LOG.info("hgvs : " + refSnpAllele);
                 } else if (!StringUtils.isEmpty(response.getString("deletion"))) {
                     refSnpAllele = response.getString("deletion");
-                    LOG.info("del : " + refSnpAllele);
                 } else if (!StringUtils.isEmpty(response.getString("insertion"))) {
                     refSnpAllele = response.getString("insertion");
-                    LOG.info("insertion : " + refSnpAllele);
                 } else {
                     // hgvs, deletion, insertion が無ければ SNPではなく、Variant にデータを登録
                     item = createItem("Variant");
-                    LOG.info("variant");
                     String variantId = response.getString("acc_num");
                     String description = response.getString("descr");
                     item.setAttribute("identifier", variantId);
                     item.setAttribute("description", description);
-                    LOG.info("hgmd id = " + hgmdId);
                     item.setReference("hgmd", hgmdId);
                     store(item);
                     ret = item.getIdentifier();
@@ -270,7 +262,6 @@ public class HgmdConverter extends BioDBConverter {
                     item.setAttribute("orientation", orientation);
                 }
             }
-            LOG.info("hgmd id = " + hgmdId);
             item.setReference("hgmd", hgmdId);
             store(item);
             ret = item.getIdentifier();
@@ -280,11 +271,10 @@ public class HgmdConverter extends BioDBConverter {
         return ret;
     }
 
-    private String getUmlses(String cui, String hgmds) throws Exception {
-        // Publication set only pubMedId.
+    private String getUmlses(String cui, List<String> hgmdsUmlses) throws Exception {
         Item item = createItem("UMLSTerm");
         item.setAttribute("identifier", cui);
-        item.setReference("hgmds", hgmds);
+        item.setCollection("hgmds", hgmdsUmlses);
         store(item);
         return item.getIdentifier();
     }
@@ -364,9 +354,9 @@ public class HgmdConverter extends BioDBConverter {
             ResultsRow<InterMineObject> rr = (ResultsRow<InterMineObject>) iterator.next();
             InterMineObject p = rr.get(0);
 
-            String name = (String) p.getFieldValue("identifier");
-            if (name != null) {
-                umlsTermSet.add(name);
+            String identifier = (String) p.getFieldValue("identifier");
+            if (identifier != null) {
+                umlsTermSet.add(identifier);
             }
         }
     }
