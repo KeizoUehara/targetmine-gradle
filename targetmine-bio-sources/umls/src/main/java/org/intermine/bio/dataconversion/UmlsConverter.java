@@ -74,6 +74,7 @@ public class UmlsConverter extends BioFileConverter
 					}
 					diseaseConcept = createItem("DiseaseConcept");
 					diseaseConcept.setAttribute("identifier",identifier);
+					diseaseConcept.setAttribute("semanticType",umls.getSemanticLabel());
 					String name = umls.getName();
 					diseaseConcept.setAttribute("name",name);
 					

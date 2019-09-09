@@ -11,6 +11,7 @@
     <class name="DiseaseConcept" is-interface="true">
         <attribute name="identifier" type="java.lang.String"/>
         <attribute name="name" type="java.lang.String"/>
+        <attribute name="semanticType" type="java.lang.String"/>
         <collection name="terms" referenced-type="OntologyTerm" reverse-reference="diseaseConcepts"/>
     </class>
 </classes>

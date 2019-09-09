@@ -18,6 +18,7 @@ public class UMLSParser implements AutoCloseable{
 	private String[] semanticTypes;
 	private File styFile;
 	private HashMap<String, String> semanticTypeMap;
+	private HashMap<String, String> semanticTypeLabelMap = new HashMap<String, String>();
 	
 	public UMLSParser(File consoFile, File styFile,String[] semanticTypes) throws IOException {
 		this.semanticTypes = semanticTypes;
@@ -46,9 +47,13 @@ public class UMLSParser implements AutoCloseable{
 			String[] split = line.split("\\|");
 			String cui = split[0];
 			String str = split[2];
+			String label = split[3];
 			for(String type :DATA_TYPES){
 				if(str.startsWith(type)) {
 					semanticTypeMap.put(cui,type);
+					if(!semanticTypeLabelMap.containsKey(type)) {
+						semanticTypeLabelMap.put(type, label);
+					}
 					break;
 				}
 			}
@@ -71,7 +76,9 @@ public class UMLSParser implements AutoCloseable{
 			String identifer = split[0];
 			if(semanticTypeMap== null || semanticTypeMap.containsKey(identifer)) {
 				String name = split[14];
-				return new UMLS(identifer,name,semanticTypeMap.get(identifer),split[11],split[13]);
+				String semanticType = semanticTypeMap.get(identifer);
+				String label = semanticTypeLabelMap.get(semanticType);
+				return new UMLS(identifer,name,semanticType,label,split[11],split[13]);
 			}
 
 		}
