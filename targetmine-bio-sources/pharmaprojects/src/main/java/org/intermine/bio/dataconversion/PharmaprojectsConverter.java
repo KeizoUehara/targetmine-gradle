@@ -57,8 +57,8 @@ public class PharmaprojectsConverter extends BioFileConverter
 		propertyNames.put("mechanismsOfAction", new JsonToStr("mechanismsOfAction"));
 		propertyNames.put("originator", new JsonToStr("originatorName"));
 		propertyNames.put("therapeuticClasses", new JsonToStr("therapeuticClasses","${therapeuticClassName}(${therapeuticClassStatus})"));
-		propertyNames.put("pharmacokinetics", new JsonToStr("pharmacokinetics"));
-		propertyNames.put("patents", new JsonToStr("patents"));
+		propertyNames.put("pharmacokinetics", new JsonToStr("pharmacokinetics","${model} ${parameter} ${unit}"));
+		propertyNames.put("patents", new JsonToStr("patents","${patentNumber}"));
 		propertyNames.put("marketing", new JsonToStr("marketing"));
 		propertyNames.put("recordUrl",new JsonToStr( "recordUrl"));
 	}

@@ -46,6 +46,10 @@ public class JsonToStr {
 		}
 		if (object instanceof JSONObject) {
 			JSONObject obj = (JSONObject) object;
+			if(template==null) {
+				throw new RuntimeException("template is null for "+ key);
+			}
+
 			return Utils.replaceString(template, obj);
 		}
 		return object.toString();
