@@ -42,32 +42,33 @@ public class PharmaprojectsConverter extends BioFileConverter
     public PharmaprojectsConverter(ItemWriter writer, Model model) {
         super(writer, model, DATA_SOURCE_NAME, DATASET_TITLE);
     }
-	private static Map<String, String> propertyNames = new HashMap<String, String>();
+	private static Map<String, JsonToStr> propertyNames = new HashMap<String, JsonToStr>();
 
 	static {
-		propertyNames.put("identifier", "drugPrimaryName");
-		propertyNames.put("overview", "overview");
-		propertyNames.put("icd9", "icd9");
-		propertyNames.put("icd10", "icd10");
-		propertyNames.put("preClinical", "preClinical");
-		propertyNames.put("phaseI", "phaseI");
-		propertyNames.put("phaseII", "phaseII");
-		propertyNames.put("phaseIII", "phaseIII");
-		propertyNames.put("mechanismsOfAction", "mechanismsOfAction");
-		propertyNames.put("originator", "originator");
-		propertyNames.put("therapeuticClasses", "therapeuticClasses");
-		propertyNames.put("pharmacokinetics", "pharmacokinetics");
-		propertyNames.put("patents", "patents");
-		propertyNames.put("marketing", "marketing");
-		propertyNames.put("recordUrl", "recordUrl");
+		propertyNames.put("identifier",new JsonToStr("drugPrimaryName"));
+		propertyNames.put("overview", new JsonToStr("overview"));
+		propertyNames.put("origin", new JsonToStr("origin"));
+		propertyNames.put("icd9", new JsonToStr("drugIcd9","${icd9Id} ${name}"));
+		propertyNames.put("icd10", new JsonToStr("drugIcd10","${icd10Id} ${name}"));
+		propertyNames.put("preClinical", new JsonToStr("preClinical"));
+		propertyNames.put("phaseI", new JsonToStr("phaseI"));
+		propertyNames.put("phaseII", new JsonToStr("phaseII"));
+		propertyNames.put("phaseIII", new JsonToStr("phaseIII"));
+		propertyNames.put("mechanismsOfAction", new JsonToStr("mechanismsOfAction"));
+		propertyNames.put("originator", new JsonToStr("originatorName"));
+		propertyNames.put("therapeuticClasses", new JsonToStr("therapeuticClasses","${therapeuticClassName}(${therapeuticClassStatus})"));
+		propertyNames.put("pharmacokinetics", new JsonToStr("pharmacokinetics"));
+		propertyNames.put("patents", new JsonToStr("patents"));
+		propertyNames.put("marketing", new JsonToStr("marketing"));
+		propertyNames.put("recordUrl",new JsonToStr( "recordUrl"));
 	}
 
 	public void createPharmaProject(JSONObject item) throws ObjectStoreException {
 		Item project = createItem("PharmaProject");
-		for (Entry<String, String> entry : propertyNames.entrySet()) {
-			Object opt = item.opt(entry.getValue());
-			if(opt!=null && opt.toString().length() > 0) {
-				project.setAttribute(entry.getKey(), opt.toString());
+		for (Entry<String, JsonToStr> entry : propertyNames.entrySet()) {
+			String opt = entry.getValue().toString(item);
+			if(opt!=null && opt.length() > 0) {
+				project.setAttribute(entry.getKey(), opt);
 			}
 		}
 		store(project);

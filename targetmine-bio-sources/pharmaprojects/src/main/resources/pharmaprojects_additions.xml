@@ -9,6 +9,7 @@
 	<class name="PharmaProject" is-interface="true">
 		<attribute name="identifier" type="java.lang.String"/>
 		<attribute name="overview" type="java.lang.String"/>
+		<attribute name="origin" type="java.lang.String"/>
 		<attribute name="icd9" type="java.lang.String"/>
 		<attribute name="icd10" type="java.lang.String"/>
 		<attribute name="preClinical" type="java.lang.String"/>
