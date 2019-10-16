@@ -11,9 +11,11 @@ package org.intermine.bio.dataconversion;
  */
 
 import java.io.Reader;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.io.File;
 import java.io.IOException;
 
 import org.intermine.dataconversion.ItemWriter;
@@ -63,7 +65,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 		propertyNames.put("recordUrl",new JsonToStr( "recordUrl"));
 	}
 
-	public void createPharmaProject(JSONObject item) throws ObjectStoreException {
+	public String createPharmaProject(JSONObject item) throws ObjectStoreException {
 		Item project = createItem("PharmaProject");
 		for (Entry<String, JsonToStr> entry : propertyNames.entrySet()) {
 			String opt = entry.getValue().toString(item);
@@ -81,6 +83,27 @@ public class PharmaprojectsConverter extends BioFileConverter
 			}
 		}
 		store(project);
+		return project.getIdentifier();
+	}
+	public void createPharmaProjectCompounds(JSONObject item,String pharmaProjectRefId) throws ObjectStoreException {
+		Item compounds = createItem("PharmaProjectCompound");
+		String identifier = item.getString("drugPrimaryName");
+		compounds.setAttribute("identifier", "PharmaProject: " +identifier);
+		compounds.setAttribute("originalId", identifier);
+		compounds.setReference("pharmaProject", pharmaProjectRefId);
+		String casNumbers = item.optString("casNumbers");
+		if(casNumbers!=null) {
+			compounds.setAttribute("casRegistryNumber", casNumbers);
+		}
+		JSONArray jsonArray = item.getJSONArray("chemicalStructure");
+        for (int i = 0; i < jsonArray.length(); i++) {
+        	String smiles = jsonArray.getString(i);
+        	String inchiKey = smilesToInchiKeyMap.get(smiles);
+        	if(inchiKey!=null) {
+    			compounds.setAttribute("casRegistryNumber", casNumbers);
+        	}
+        }
+		store(compounds);
 	}
 	private HashMap<String,String> meshTermIds = new HashMap<String,String>();
 	private String createMeshTerm(String meshId) throws ObjectStoreException {
@@ -104,18 +127,33 @@ public class PharmaprojectsConverter extends BioFileConverter
 		}
 		return sb.toString();
 	}
+	HashMap<String,String> smilesToInchiKeyMap = new HashMap<String,String>();
+	private void loadSmilesToInchiKey() throws IOException {
+		Files.lines(smilesInchiKeyFile.toPath()).forEach(line ->{
+			String[] split = line.split("\\|");
+			String smiles = split[0];
+			String inchikey = split[1];
+			smilesToInchiKeyMap.put(smiles,inchikey);
+		});
+	}
+	private File smilesInchiKeyFile;
+	public void setSmilesInchiKeyFile(File smilesInchiKeyFile) {
 
+		this.smilesInchiKeyFile = smilesInchiKeyFile;
+	}
     /**
      * 
      *
      * {@inheritDoc}
      */
     public void process(Reader reader) throws Exception {
+    	loadSmilesToInchiKey();
         JSONObject jsonObject = new JSONObject(readAll(reader));
         JSONArray jsonArray = jsonObject.getJSONArray("items");
         for (int i = 0; i < jsonArray.length(); i++) {
         	JSONObject item = jsonArray.getJSONObject(i);
-        	createPharmaProject(item);
+        	String pharmaProject = createPharmaProject(item);
+        	createPharmaProjectCompounds(item, pharmaProject);
 		}
     }
 }
