@@ -46,7 +46,7 @@ public class JsonToStr {
 		}
 		if (object instanceof JSONObject) {
 			JSONObject obj = (JSONObject) object;
-			return Utils.replaceString(template, obj.toMap());
+			return Utils.replaceString(template, obj);
 		}
 		return object.toString();
 	}
