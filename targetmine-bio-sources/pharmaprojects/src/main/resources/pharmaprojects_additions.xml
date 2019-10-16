@@ -23,7 +23,7 @@
 		<attribute name="patents" type="java.lang.String"/>
 		<attribute name="marketing" type="java.lang.String"/>
 		<attribute name="recordUrl" type="java.lang.String"/>
-		<collection name="meshTerms" referenced-type="MeshTerm" reverse-reference="subject"/>
+		<collection name="meshTerms" referenced-type="MeshTerm" reverse-reference="pharmaProjects"/>
 	</class>
 	
 	<class name="Compound" is-interface="true">
