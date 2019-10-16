@@ -71,7 +71,29 @@ public class PharmaprojectsConverter extends BioFileConverter
 				project.setAttribute(entry.getKey(), opt);
 			}
 		}
+		JSONArray meshTerms = item.optJSONArray("drugMeshTerms");
+		if(meshTerms!=null) {
+			for (int i = 0; i < meshTerms.length(); i++) {
+				JSONObject jsonObject = meshTerms.getJSONObject(i);
+				String meshId = jsonObject.getString("meshId");
+				String meshTerm = createMeshTerm(meshId);
+				project.addToCollection("meshTerms", meshTerm);
+			}
+		}
 		store(project);
+	}
+	private HashMap<String,String> meshTermIds = new HashMap<String,String>();
+	private String createMeshTerm(String meshId) throws ObjectStoreException {
+		String meshTermRef = meshTermIds.get(meshId);
+		if(meshTermRef!=null) {
+			return meshTermRef;
+		}
+		Item meshItem = createItem("MeshTerm");
+		meshItem.setAttribute("identifier", meshId);
+		store(meshItem);
+		meshTermRef = meshItem.getIdentifier();
+		meshTermIds.put(meshId, meshTermRef);
+		return meshTermRef;
 	}
 	private String readAll(Reader reader) throws IOException {
 		StringBuilder sb = new StringBuilder();

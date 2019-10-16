@@ -23,6 +23,7 @@
 		<attribute name="patents" type="java.lang.String"/>
 		<attribute name="marketing" type="java.lang.String"/>
 		<attribute name="recordUrl" type="java.lang.String"/>
+		<collection name="meshTerms" referenced-type="MeshTerm" reverse-reference="subject"/>
 	</class>
 	
 	<class name="Compound" is-interface="true">
@@ -54,5 +55,9 @@
 		<attribute name="name" type="java.lang.String"/>
 		<collection name="compounds" referenced-type="Compound" reverse-reference="compoundGroup"/>
 	</class>
+    <class name="MeshTerm" extends="OntologyTerm" is-interface="true">
+        <attribute name="identifier" type="java.lang.String"/>
+        <collection name="pharmaProjects" referenced-type="PharmaProject" reverse-reference="meshTerms"/>
+    </class>
 
 </classes>
