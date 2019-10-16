@@ -6,7 +6,7 @@
 	<class name="PharmaProjectCompound" extends="Compound" is-interface="true">
 	</class>
 
-	<class name="ParmaProject" is-interface="true">
+	<class name="PharmaProject" is-interface="true">
 		<attribute name="identifier" type="java.lang.String"/>
 		<attribute name="overview" type="java.lang.String"/>
 		<attribute name="icd9" type="java.lang.String"/>
@@ -21,6 +21,7 @@
 		<attribute name="pharmacokinetics" type="java.lang.String"/>
 		<attribute name="patents" type="java.lang.String"/>
 		<attribute name="marketing" type="java.lang.String"/>
+		<attribute name="recordUrl" type="java.lang.String"/>
 	</class>
 	
 	<class name="Compound" is-interface="true">
@@ -30,7 +31,6 @@
 		<attribute name="inchiKey" type="java.lang.String"/>
 		<attribute name="casRegistryNumber" type="java.lang.String"/>
 		<reference name="compoundGroup" referenced-type="CompoundGroup" reverse-reference="compounds"/>
-		<collection name="targetProteins" referenced-type="CompoundProteinInteraction" reverse-reference="compound"/>
 		<collection name="structures" referenced-type="CompoundStructure" reverse-reference="compound"/>
 		<collection name="synonyms" referenced-type="CompoundSynonym" reverse-reference="subject"/>
 	</class>

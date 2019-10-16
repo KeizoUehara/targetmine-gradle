@@ -14,9 +14,11 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.io.IOException;
 
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
+import org.intermine.objectstore.ObjectStoreException;
 import org.intermine.xml.full.Item;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -60,22 +62,33 @@ public class PharmaprojectsConverter extends BioFileConverter
 		propertyNames.put("recordUrl", "recordUrl");
 	}
 
-	public void createPharmaProject(JSONObject item) {
+	public void createPharmaProject(JSONObject item) throws ObjectStoreException {
 		Item project = createItem("PharmaProject");
 		for (Entry<String, String> entry : propertyNames.entrySet()) {
 			Object opt = item.opt(entry.getValue());
-			if(opt!=null) {
+			if(opt!=null && opt.toString().length() > 0) {
 				project.setAttribute(entry.getKey(), opt.toString());
 			}
 		}
+		store(project);
 	}
+	private String readAll(Reader reader) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		char[] buff = new char[4096];
+		int len = 0;
+		while((len = reader.read(buff))>0) {
+			sb.append(buff, 0, len);
+		}
+		return sb.toString();
+	}
+
     /**
      * 
      *
      * {@inheritDoc}
      */
     public void process(Reader reader) throws Exception {
-        JSONObject jsonObject = new JSONObject(reader);
+        JSONObject jsonObject = new JSONObject(readAll(reader));
         JSONArray jsonArray = jsonObject.getJSONArray("items");
         for (int i = 0; i < jsonArray.length(); i++) {
         	JSONObject item = jsonArray.getJSONObject(i);
