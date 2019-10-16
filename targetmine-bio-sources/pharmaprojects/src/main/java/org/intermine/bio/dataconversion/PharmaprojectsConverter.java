@@ -11,10 +11,15 @@ package org.intermine.bio.dataconversion;
  */
 
 import java.io.Reader;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
 import org.intermine.xml.full.Item;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 
 /**
@@ -35,13 +40,46 @@ public class PharmaprojectsConverter extends BioFileConverter
     public PharmaprojectsConverter(ItemWriter writer, Model model) {
         super(writer, model, DATA_SOURCE_NAME, DATASET_TITLE);
     }
+	private static Map<String, String> propertyNames = new HashMap<String, String>();
 
+	static {
+		propertyNames.put("identifier", "drugPrimaryName");
+		propertyNames.put("overview", "overview");
+		propertyNames.put("icd9", "icd9");
+		propertyNames.put("icd10", "icd10");
+		propertyNames.put("preClinical", "preClinical");
+		propertyNames.put("phaseI", "phaseI");
+		propertyNames.put("phaseII", "phaseII");
+		propertyNames.put("phaseIII", "phaseIII");
+		propertyNames.put("mechanismsOfAction", "mechanismsOfAction");
+		propertyNames.put("originator", "originator");
+		propertyNames.put("therapeuticClasses", "therapeuticClasses");
+		propertyNames.put("pharmacokinetics", "pharmacokinetics");
+		propertyNames.put("patents", "patents");
+		propertyNames.put("marketing", "marketing");
+		propertyNames.put("recordUrl", "recordUrl");
+	}
+
+	public void createPharmaProject(JSONObject item) {
+		Item project = createItem("PharmaProject");
+		for (Entry<String, String> entry : propertyNames.entrySet()) {
+			Object opt = item.opt(entry.getValue());
+			if(opt!=null) {
+				project.setAttribute(entry.getKey(), opt.toString());
+			}
+		}
+	}
     /**
      * 
      *
      * {@inheritDoc}
      */
     public void process(Reader reader) throws Exception {
-
+        JSONObject jsonObject = new JSONObject(reader);
+        JSONArray jsonArray = jsonObject.getJSONArray("items");
+        for (int i = 0; i < jsonArray.length(); i++) {
+        	JSONObject item = jsonArray.getJSONObject(i);
+        	createPharmaProject(item);
+		}
     }
 }
