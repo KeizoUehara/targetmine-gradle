@@ -100,7 +100,7 @@ public class PharmaprojectsConverter extends BioFileConverter
         	String smiles = jsonArray.getString(i);
         	String inchiKey = smilesToInchiKeyMap.get(smiles);
         	if(inchiKey!=null) {
-    			compounds.setAttribute("casRegistryNumber", casNumbers);
+    			compounds.setAttribute("inchiKey", inchiKey);
         	}
         }
 		store(compounds);
@@ -129,12 +129,16 @@ public class PharmaprojectsConverter extends BioFileConverter
 	}
 	HashMap<String,String> smilesToInchiKeyMap = new HashMap<String,String>();
 	private void loadSmilesToInchiKey() throws IOException {
+		if(!smilesToInchiKeyMap.isEmpty()) {
+			return;
+		}
 		Files.lines(smilesInchiKeyFile.toPath()).forEach(line ->{
-			String[] split = line.split("\\|");
+			String[] split = line.split("\t");
 			String smiles = split[0];
 			String inchikey = split[1];
 			smilesToInchiKeyMap.put(smiles,inchikey);
 		});
+		System.out.println("smilesInchiKeyFile loaded " + smilesToInchiKeyMap.size() +" entries");
 	}
 	private File smilesInchiKeyFile;
 	public void setSmilesInchiKeyFile(File smilesInchiKeyFile) {
