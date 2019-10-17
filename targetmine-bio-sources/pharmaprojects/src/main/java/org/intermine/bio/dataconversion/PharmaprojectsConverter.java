@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.intermine.dataconversion.ItemWriter;
@@ -51,7 +52,6 @@ public class PharmaprojectsConverter extends BioFileConverter
 	private static Map<String, JsonToStr> propertyNames = new HashMap<String, JsonToStr>();
 
 	static {
-		propertyNames.put("identifier",new JsonToStr("drugPrimaryName"));
 		propertyNames.put("overview", new JsonToStr("overview"));
 		propertyNames.put("origin", new JsonToStr("origin"));
 		propertyNames.put("icd9", new JsonToStr("drugIcd9","${icd9Id} ${name}"));
@@ -71,6 +71,8 @@ public class PharmaprojectsConverter extends BioFileConverter
 
 	public String createPharmaProject(JSONObject item) throws ObjectStoreException {
 		Item project = createItem("PharmaProject");
+		String identifier = item.getString("drugId");
+		project.setAttribute("identifier", identifier);
 		for (Entry<String, JsonToStr> entry : propertyNames.entrySet()) {
 			String opt = entry.getValue().toString(item);
 			if(opt!=null && opt.length() > 0) {
@@ -86,15 +88,26 @@ public class PharmaprojectsConverter extends BioFileConverter
 				project.addToCollection("meshTerms", meshTerm);
 			}
 		}
+		JSONArray jsonArray = item.getJSONArray("targets");
+        for (int i = 0; i < jsonArray.length(); i++) {
+        	JSONObject targets = jsonArray.getJSONObject(i);
+        	Object opt = targets.opt("entrezGeneId");
+        	if(opt != null) {
+        		String gene = getGene(opt.toString());
+        		project.addToCollection("targets", gene);
+        	}
+        }
 		store(project);
 		return project.getIdentifier();
 	}
 	public void createPharmaProjectCompounds(JSONObject item,String pharmaProjectRefId) throws ObjectStoreException {
 		Item compounds = createItem("PharmaProjectCompound");
-		String identifier = item.getString("drugPrimaryName");
+		String identifier = item.getString("drugId");
 		String name = item.getString("drugPrimaryName");
+		String origin = item.getString("origin");
 		compounds.setAttribute("identifier", "PharmaProject: " +identifier);
 		compounds.setAttribute("originalId", name);
+		compounds.setAttribute("origin", origin);
 		compounds.setReference("pharmaProject", pharmaProjectRefId);
 		String casNumbers = item.optString("casNumbers");
 		if(casNumbers!=null) {
@@ -135,6 +148,25 @@ public class PharmaprojectsConverter extends BioFileConverter
 
 		store(compounds);
 	}
+    private Map<String, String> geneMap = new HashMap<String, String>();
+
+    private String getGene(String primaryIdentifier) throws ObjectStoreException {
+        if (StringUtils.isEmpty(primaryIdentifier)) {
+            return "";
+        }
+        String ret = geneMap.get(primaryIdentifier);
+
+        if (ret == null) {
+            Item item = createItem("Gene");
+            item.setAttribute("primaryIdentifier", primaryIdentifier);
+            item.setAttribute("ncbiGeneId", primaryIdentifier);
+            store(item);
+            ret = item.getIdentifier();
+            geneMap.put(primaryIdentifier, ret);
+        }
+        return ret;
+    }
+
 	// key is inchikey, value is compoundGroup Item's identifier
 	private Map<String, String> compoundGroupMap = new HashMap<String, String>();
 

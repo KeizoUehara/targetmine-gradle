@@ -4,6 +4,7 @@
 <classes>
 <!-- add any <class> elements here -->
 	<class name="PharmaProjectCompound" extends="Compound" is-interface="true">
+		<attribute name="origin" type="java.lang.String"/>
 		<reference name="pharmaProject" referenced-type="PharmaProject" reverse-reference="compounds"/>
 	</class>
 
@@ -26,7 +27,12 @@
 		<attribute name="recordUrl" type="java.lang.String"/>
 		<collection name="meshTerms" referenced-type="MeshTerm" reverse-reference="pharmaProjects"/>
 		<collection name="compounds" referenced-type="PharmaProjectCompound" reverse-reference="pharmaProject"/>
+		<collection name="targets" referenced-type="Gene" reverse-reference="pharmaProjects"/>		
 	</class>
+    <class name="Gene" is-interface="true">
+        <attribute name="ncbiGeneId" type="java.lang.String"/>
+        <collection name="pharmaProjects" referenced-type="PharmaProject" reverse-reference="targets"/>
+    </class>
 	
 	<class name="Compound" is-interface="true">
 		<attribute name="identifier" type="java.lang.String"/>
