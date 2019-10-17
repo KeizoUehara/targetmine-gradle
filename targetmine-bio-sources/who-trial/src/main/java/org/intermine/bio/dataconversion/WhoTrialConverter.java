@@ -35,8 +35,8 @@ public class WhoTrialConverter extends BioFileConverter {
 	private File mrStyFile;
 
 	//
-	private static final String DATASET_TITLE = "who-trial2";
-	private static final String DATA_SOURCE_NAME = "who-trial2";
+	private static final String DATASET_TITLE = "who-trial";
+	private static final String DATA_SOURCE_NAME = "who-trial";
 
 	// key is CUI, value is reference to UmlsDisease item
 	private Map<String, Item> umlsTermMap = new HashMap<String, Item>();
@@ -62,7 +62,7 @@ public class WhoTrialConverter extends BioFileConverter {
 		if(idSet.contains(name)) {
 			return;
 		}
-		Item whoTrial = createItem("ClinicalTrial");
+		Item whoTrial = createItem("WHOTrial");
 		for (String key : TrialXMLParser.getkeys()) {
 			String child = trial.get(key);
 			if(child == null) {
