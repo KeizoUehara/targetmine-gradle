@@ -18,6 +18,8 @@ import java.util.Map.Entry;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.intermine.dataconversion.ItemWriter;
 import org.intermine.metadata.Model;
 import org.intermine.objectstore.ObjectStoreException;
@@ -32,9 +34,11 @@ import org.json.JSONObject;
  */
 public class PharmaprojectsConverter extends BioFileConverter
 {
+	private static final Logger LOG = LogManager.getLogger(PharmaprojectsConverter.class);
+
     //
-    private static final String DATASET_TITLE = "Add DataSet.title here";
-    private static final String DATA_SOURCE_NAME = "Add DataSource.name here";
+    private static final String DATASET_TITLE = "PharmaProjects";
+    private static final String DATA_SOURCE_NAME = "PharmaProjects";
 
     /**
      * Constructor
@@ -88,8 +92,9 @@ public class PharmaprojectsConverter extends BioFileConverter
 	public void createPharmaProjectCompounds(JSONObject item,String pharmaProjectRefId) throws ObjectStoreException {
 		Item compounds = createItem("PharmaProjectCompound");
 		String identifier = item.getString("drugPrimaryName");
+		String name = item.getString("drugPrimaryName");
 		compounds.setAttribute("identifier", "PharmaProject: " +identifier);
-		compounds.setAttribute("originalId", identifier);
+		compounds.setAttribute("originalId", name);
 		compounds.setReference("pharmaProject", pharmaProjectRefId);
 		String casNumbers = item.optString("casNumbers");
 		if(casNumbers!=null) {
@@ -101,10 +106,53 @@ public class PharmaprojectsConverter extends BioFileConverter
         	String inchiKey = smilesToInchiKeyMap.get(smiles);
         	if(inchiKey!=null) {
     			compounds.setAttribute("inchiKey", inchiKey);
+    			int indexof = inchiKey.indexOf("-");
+    			if( 0 <= indexof ){
+    				String compoundGroupId = inchiKey.substring(0, indexof );
+    				if (compoundGroupId.length() == 14) {
+    					String compoundGroupRef = getCompoundGroup(compoundGroupId, name);
+    					compounds.setReference("compoundGroup", compoundGroupRef);
+    				} else {
+    					LOG.error(String.format("Bad InChIKey value: %s .", inchiKey));
+    				}
+    			}
+
         	}
+    		Item structureItem = createItem( "CompoundStructure" );
+    		structureItem.setAttribute( "type", "SMILES" );
+    		structureItem.setAttribute( "value", smiles );
+    		structureItem.setReference("compound", compounds);
+    		store(structureItem);
         }
+		jsonArray = item.getJSONArray("drugNameSynonyms");
+        for (int i = 0; i < jsonArray.length(); i++) {
+        	String synonyms = jsonArray.getString(i);
+    		Item syn = createItem("CompoundSynonym");
+    		syn.setAttribute("value", synonyms);
+    		syn.setReference("subject", compounds);
+    		store(syn);
+        }
+
 		store(compounds);
 	}
+	// key is inchikey, value is compoundGroup Item's identifier
+	private Map<String, String> compoundGroupMap = new HashMap<String, String>();
+
+	private String getCompoundGroup(String inchiKey, String name) throws ObjectStoreException {
+		String ret = compoundGroupMap.get(inchiKey);
+		if (ret == null) {
+			Item item = createItem("CompoundGroup");
+			item.setAttribute("identifier", inchiKey);
+			if( null != name && !"".equals( name ) ){
+				item.setAttribute("name", name);
+			}
+			store(item);
+			ret = item.getIdentifier();
+			compoundGroupMap.put(inchiKey, ret);
+		}
+		return ret;
+	}
+
 	private HashMap<String,String> meshTermIds = new HashMap<String,String>();
 	private String createMeshTerm(String meshId) throws ObjectStoreException {
 		String meshTermRef = meshTermIds.get(meshId);
