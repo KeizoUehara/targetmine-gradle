@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 
 import java.io.Reader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -61,7 +62,7 @@ public class TrialtroveConverter extends BioFileConverter
 	public void setOsAlias(String osAlias) {
 		this.osAlias = osAlias;
 	}
-
+	private HashMap<String,String> trialGroupMap = new HashMap<>();
 	private IdSetLoader trialGroupIdSet;
     /**
      * 
@@ -80,10 +81,16 @@ public class TrialtroveConverter extends BioFileConverter
     			String[] ids = row.get("trialProtocolIDs").split("\n");
     			for (String id : ids) {
 					if(trialGroupIdSet.hasId(id)) {
-		    			Item trialGroup = createItem("TrialGroup");
-		    			trialGroup.setAttribute("identifier", id);
-		    			store(trialGroup);
-		    			item.setReference("trialGroup", trialGroup);
+						String trialGroupRefId = trialGroupMap.get(id);
+						if(trialGroupRefId==null) {
+			    			Item trialGroup = createItem("TrialGroup");
+			    			trialGroup.setAttribute("identifier", id);
+			    			store(trialGroup);
+			    			trialGroupRefId = trialGroup.getIdentifier();
+			    			trialGroupMap.put(id, trialGroupRefId);
+						}
+		    			item.setReference("trialGroup", trialGroupRefId);
+		    			break;
 					}
 				}
     			for (Entry<String,String> entry : propertyNames.entrySet()) {
