@@ -40,7 +40,7 @@ public class CSVParser implements Iterable<Map<String,String>>,AutoCloseable{
 			}
 			String[] cols = splitLine(readLine);
 			row = new HashMap<String, String>();
-			for (int i = 0; i < headers.length; i++) {
+			for (int i = 0; i < headers.length && i < cols.length; i++) {
 				row.put(headers[i], cols[i]);
 			}
 			return true;

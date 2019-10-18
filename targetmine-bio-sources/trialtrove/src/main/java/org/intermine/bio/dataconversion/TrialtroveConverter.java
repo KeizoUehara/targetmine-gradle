@@ -69,7 +69,7 @@ public class TrialtroveConverter extends BioFileConverter
      * {@inheritDoc}
      */
     public void process(Reader reader) throws Exception {
-    	if(trialGroupIdSet!=null) {
+    	if(trialGroupIdSet==null) {
         	trialGroupIdSet = new IdSetLoader(osAlias, "TrialGroup", "identifier");
         	trialGroupIdSet.loadIds();
     	}

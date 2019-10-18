@@ -4,7 +4,7 @@
 <classes>
     <class name="TrialGroup" is-interface="true">
         <attribute name="identifier" type="java.lang.String"/>
-        <collection name="trials" referenced-type="ClinicalTrial" reverse-reference="trials"/>
+        <collection name="trials" referenced-type="ClinicalTrial" reverse-reference="trialGroup"/>
         
     </class>
     <class name="ClinicalTrial" is-interface="true">

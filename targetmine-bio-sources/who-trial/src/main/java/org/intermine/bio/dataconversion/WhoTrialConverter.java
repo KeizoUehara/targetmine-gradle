@@ -59,7 +59,10 @@ public class WhoTrialConverter extends BioFileConverter {
 
 	private void storeTrialElements(Map<String,String> trial) throws ObjectStoreException {
 		String name = trial.get("name");
-		if(idSet.contains(name)) {
+		if(idSet.contains(name) || name == null) {
+			if(name ==null){
+				System.out.println(trial);
+			}
 			return;
 		}
 		Item trialGroup = createItem("TrialGroup");
