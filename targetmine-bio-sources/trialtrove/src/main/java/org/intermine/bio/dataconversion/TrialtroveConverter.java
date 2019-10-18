@@ -56,15 +56,36 @@ public class TrialtroveConverter extends BioFileConverter
 		propertyNames.put("studyDesign", "${trialStudyDesign}");
 		propertyNames.put("treatmentPlan", "${trialTreatmentPlan}");
 	}
+	private String osAlias = null;
+
+	public void setOsAlias(String osAlias) {
+		this.osAlias = osAlias;
+	}
+
+	private IdSetLoader trialGroupIdSet;
     /**
      * 
      *
      * {@inheritDoc}
      */
     public void process(Reader reader) throws Exception {
+    	if(trialGroupIdSet!=null) {
+        	trialGroupIdSet = new IdSetLoader(osAlias, "TrialGroup", "identifier");
+        	trialGroupIdSet.loadIds();
+    	}
+
     	try(CSVParser parser = new CSVParser(reader)){
     		for(Map<String,String> row:parser) {
     			Item item = createItem("TrialTrove");
+    			String[] ids = row.get("trialProtocolIDs").split("\n");
+    			for (String id : ids) {
+					if(trialGroupIdSet.hasId(id)) {
+		    			Item trialGroup = createItem("TrialGroup");
+		    			trialGroup.setAttribute("identifier", id);
+		    			store(trialGroup);
+		    			item.setReference("trialGroup", trialGroup);
+					}
+				}
     			for (Entry<String,String> entry : propertyNames.entrySet()) {
 					String value = Utils.replaceString(entry.getValue(), row);
 					if(value!=null && value.length()>0) {

@@ -55,14 +55,18 @@ public class WhoTrialConverter extends BioFileConverter {
 	private static int PRIMARY_KEY_STRING_LIMIT = 1000;
 
 	private static final String WHO_TRIAL2_URL = "https://apps.who.int/trialsearch/Trial2.aspx?TrialID=%s";
-
+	
 
 	private void storeTrialElements(Map<String,String> trial) throws ObjectStoreException {
 		String name = trial.get("name");
 		if(idSet.contains(name)) {
 			return;
 		}
+		Item trialGroup = createItem("TrialGroup");
+		trialGroup.setAttribute("identifier", name);
+		store(trialGroup);
 		Item whoTrial = createItem("WHOTrial");
+		whoTrial.setReference("trialGroup", trialGroup);
 		for (String key : TrialXMLParser.getkeys()) {
 			String child = trial.get(key);
 			if(child == null) {
@@ -109,6 +113,7 @@ public class WhoTrialConverter extends BioFileConverter {
 		} catch (ObjectStoreException e) {
 			LOG.warn("Cannot store who trials", e);
 		}
+		
 	}
 
 	private String[] convertConditionToDiseaseNameSet(String condition) {

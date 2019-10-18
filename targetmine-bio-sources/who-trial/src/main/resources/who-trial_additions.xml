@@ -6,6 +6,11 @@
         <attribute name="identifier" type="java.lang.String"/>
         <collection name="trials" referenced-type="WHOTrial" reverse-reference="umlses"/>
     </class>
+	<class name="TrialGroup" is-interface="true">
+        <attribute name="identifier" type="java.lang.String"/>
+        <collection name="trials" referenced-type="ClinicalTrial" reverse-reference="trials"/>
+        
+    </class>
     <class name="ClinicalTrial" is-interface="true">
         <attribute name="name" type="java.lang.String"/>
         <attribute name="title" type="java.lang.String"/>
@@ -16,6 +21,7 @@
         <attribute name="result" type="java.lang.String"/>
         <attribute name="countries" type="java.lang.String"/>
         <attribute name="condition" type="java.lang.String"/>
+   		<reference name="trialGroup" referenced-type="TrialGroup" reverse-reference="trials"/>
     </class>
     <class name="WHOTrial" extends="ClinicalTrial" is-interface="true">
         <attribute name="scientificTitle" type="java.lang.String"/>
