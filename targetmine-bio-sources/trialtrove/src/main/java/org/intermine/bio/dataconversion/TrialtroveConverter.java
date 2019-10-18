@@ -46,6 +46,7 @@ public class TrialtroveConverter extends BioFileConverter
 	static {
 		propertyNames.put("name", "TrialTroveID-${trialId}");
 		propertyNames.put("title", "${trialTitle}");
+		propertyNames.put("trialId", "${trialId}");
 		propertyNames.put("primaryOutcome", "${trialPrimaryEndPoint}");
 		propertyNames.put("secondaryOutcome", "${trialOtherEndPoint}");
 		propertyNames.put("phase", "${trialPhase}");

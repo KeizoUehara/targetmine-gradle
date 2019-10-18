@@ -20,6 +20,7 @@
    		<reference name="trialGroup" referenced-type="TrialGroup" reverse-reference="trials"/>
     </class>
     <class name="TrialTrove" extends="ClinicalTrial" is-interface="true">
+        <attribute name="trialId" type="java.lang.Integer"/>
         <attribute name="primaryDrugName" type="java.lang.String"/>
         <attribute name="otherDrugName" type="java.lang.String"/>
         <attribute name="studyDesign" type="java.lang.String"/>

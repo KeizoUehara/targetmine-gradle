@@ -97,6 +97,23 @@ public class PharmaprojectsConverter extends BioFileConverter
         		project.addToCollection("targets", gene);
         	}
         }
+		jsonArray = item.getJSONArray("trialIds");
+        for (int i = 0; i < jsonArray.length(); i++) {
+        	int trialId = jsonArray.getInt(i);
+        	String trialTroveRef = createTrialTrove(trialId);
+        	project.addToCollection("trials", trialTroveRef);
+        }
+		store(project);
+		return project.getIdentifier();
+	}
+	HashMap<Integer, String> trialMap = new HashMap<Integer, String>();
+	private String createTrialTrove(Integer trialId) throws ObjectStoreException {
+		String trialRefId = trialMap.get(trialId);
+		if(trialRefId!=null) {
+			return trialRefId;
+		}
+		Item project = createItem("TrialTrove");
+		project.setAttribute("name", "TrialTroveID-" + trialId);
 		store(project);
 		return project.getIdentifier();
 	}
