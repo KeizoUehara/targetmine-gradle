@@ -115,6 +115,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 		Item project = createItem("TrialTrove");
 		project.setAttribute("name", "TrialTroveID-" + trialId);
 		store(project);
+		trialMap.put(trialId,project.getIdentifier());
 		return project.getIdentifier();
 	}
 	public void createPharmaProjectCompounds(JSONObject item,String pharmaProjectRefId) throws ObjectStoreException {
