@@ -60,7 +60,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 		propertyNames.put("phaseI", new JsonToStr("phaseI"));
 		propertyNames.put("phaseII", new JsonToStr("phaseII"));
 		propertyNames.put("phaseIII", new JsonToStr("phaseIII"));
-		propertyNames.put("mechanismsOfAction", new JsonToStr("mechanismsOfAction"));
+		propertyNames.put("mechanismsOfAction", new JsonToStr("mechanismsOfAction","${directMechanism}"));
 		propertyNames.put("originator", new JsonToStr("originatorName"));
 		propertyNames.put("therapeuticClasses", new JsonToStr("therapeuticClasses","${therapeuticClassName}(${therapeuticClassStatus})"));
 		propertyNames.put("pharmacokinetics", new JsonToStr("pharmacokinetics","${model} ${parameter} ${unit}"));
@@ -122,10 +122,12 @@ public class PharmaprojectsConverter extends BioFileConverter
 		Item compounds = createItem("PharmaProjectCompound");
 		String identifier = item.getString("drugId");
 		String name = item.getString("drugPrimaryName");
-		String origin = item.getString("origin");
+		String origin = item.optString("origin");
 		compounds.setAttribute("identifier", "PharmaProject: " +identifier);
 		compounds.setAttribute("originalId", name);
-		compounds.setAttribute("origin", origin);
+		if(origin!=null && origin.length() > 0){
+			compounds.setAttribute("origin", origin);
+		}
 		compounds.setReference("pharmaProject", pharmaProjectRefId);
 		String casNumbers = item.optString("casNumbers");
 		if(casNumbers!=null) {
@@ -232,9 +234,13 @@ public class PharmaprojectsConverter extends BioFileConverter
 		}
 		Files.lines(smilesInchiKeyFile.toPath()).forEach(line ->{
 			String[] split = line.split("\t");
-			String smiles = split[0];
-			String inchikey = split[1];
-			smilesToInchiKeyMap.put(smiles,inchikey);
+			if( split.length == 2){
+				String smiles = split[0];
+				String inchikey = split[1];
+				smilesToInchiKeyMap.put(smiles,inchikey);
+			}else{
+				LOG.warn("Unexpected line " + line);
+			}
 		});
 		System.out.println("smilesInchiKeyFile loaded " + smilesToInchiKeyMap.size() +" entries");
 	}
