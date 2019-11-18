@@ -150,7 +150,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 		Query q = new Query();
 		QueryClass qcCompound = new QueryClass(os.getModel().getClassDescriptorByName("Compound").getType());
 		QueryClass qcSynonym = new QueryClass(os.getModel().getClassDescriptorByName(COMPOUND_SYNONYM).getType());
-		QueryField qfInchiKey = new QueryField(qcCompound, "inchikey");
+		QueryField qfInchiKey = new QueryField(qcCompound, "inchiKey");
 		QueryField qfValue = new QueryField(qcSynonym, "value");
 		q.addFrom(qcCompound);
 		q.addFrom(qcSynonym);
@@ -169,7 +169,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 		while(iterator.hasNext()) {
 			ResultsRow<String> rr = (ResultsRow<String>) iterator.next();
 			String inchikey = rr.get(0);
-			if(inchikey!=null) {
+			if(inchikey!=null && inshikey.length() > 0) {
 				LOG.info("GET_INCHIKEY " + inchikey +" : " + name);
 				return inchikey;
 			}
@@ -193,7 +193,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 		Query q = new Query();
 		QueryClass qcCompound = new QueryClass(os.getModel().getClassDescriptorByName("Compound").getType());
 
-		QueryField qfInchiKey = new QueryField(qcCompound, "inchikey");
+		QueryField qfInchiKey = new QueryField(qcCompound, "inchiKey");
 
 		q.addFrom(qcCompound);
 		q.addToSelect(qfInchiKey);
@@ -207,7 +207,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 		while (iterator.hasNext()) {
 			ResultsRow<String> rr = (ResultsRow<String>) iterator.next();
 			String inchikey = rr.get(0);
-			if(inchikey!=null) {
+			if(inchikey!=null && inchikey.length() > 0) {
 				LOG.info("GET_INCHIKEY " + inchikey +" : " + casNumber);
 				return inchikey;
 			}
@@ -267,7 +267,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 					break;
 				}
 			}
-			if(inchiKey==null) {
+			if(inchiKey!=null) {
 				compounds.setAttribute("casRegistryNumber", casNumbers.getString(0));
 			}
 		}
