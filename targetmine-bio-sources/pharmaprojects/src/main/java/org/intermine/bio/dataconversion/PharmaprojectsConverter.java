@@ -96,6 +96,10 @@ public class PharmaprojectsConverter extends BioFileConverter
 				project.setAttribute(entry.getKey(), opt);
 			}
 		}
+		Boolean pharmaProject = item.optBoolean("isPharmaProjectsDrug");
+		if(pharmaProject != null){
+			project.setAttribute("pharmaProjectsDrug",""+pharmaProject);
+		}
 		JSONArray meshTerms = item.optJSONArray("drugMeshTerms");
 		if(meshTerms!=null) {
 			for (int i = 0; i < meshTerms.length(); i++) {
@@ -169,8 +173,8 @@ public class PharmaprojectsConverter extends BioFileConverter
 		while(iterator.hasNext()) {
 			ResultsRow<String> rr = (ResultsRow<String>) iterator.next();
 			String inchikey = rr.get(0);
-			if(inchikey!=null && inshikey.length() > 0) {
-				LOG.info("GET_INCHIKEY " + inchikey +" : " + name);
+			if(inchikey!=null && inchikey.length() > 0) {
+				LOG.warn("GET_INCHIKEY " + inchikey +" : " + name);
 				return inchikey;
 			}
 		}
@@ -187,7 +191,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 	}
 	@SuppressWarnings("unchecked")
 	public String queryInchikeyByCasNumber(String casNumber) throws Exception {
-		LOG.info("Start loading diseaseterm id");
+		LOG.warn("Start loading diseaseterm id");
 		ObjectStore os = ObjectStoreFactory.getObjectStore(osAlias);
 
 		Query q = new Query();
@@ -208,7 +212,7 @@ public class PharmaprojectsConverter extends BioFileConverter
 			ResultsRow<String> rr = (ResultsRow<String>) iterator.next();
 			String inchikey = rr.get(0);
 			if(inchikey!=null && inchikey.length() > 0) {
-				LOG.info("GET_INCHIKEY " + inchikey +" : " + casNumber);
+				LOG.warn("GET_INCHIKEY " + inchikey +" : " + casNumber);
 				return inchikey;
 			}
 		}
@@ -235,7 +239,8 @@ public class PharmaprojectsConverter extends BioFileConverter
 		String name = item.getString("drugPrimaryName");
 		String origin = item.optString("origin");
 		compounds.setAttribute("identifier", "PharmaProject: " +identifier);
-		compounds.setAttribute("originalId", name);
+		compounds.setAttribute("name", name);
+		compounds.setAttribute("originalId", identifier);
 		if(origin!=null && origin.length() > 0){
 			compounds.setAttribute("origin", origin);
 		}
@@ -267,8 +272,9 @@ public class PharmaprojectsConverter extends BioFileConverter
 					break;
 				}
 			}
-			if(inchiKey!=null) {
-				compounds.setAttribute("casRegistryNumber", casNumbers.getString(0));
+			String casNumber = casNumbers.getString(0);
+			if(inchiKey == null && casNumber != null & casNumber.length() > 0) {
+				compounds.setAttribute("casRegistryNumber", casNumber);
 			}
 		}
 		if(inchiKey==null) {

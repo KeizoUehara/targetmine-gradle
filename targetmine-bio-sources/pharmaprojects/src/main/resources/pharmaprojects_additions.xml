@@ -25,6 +25,7 @@
 		<attribute name="patents" type="java.lang.String"/>
 		<attribute name="marketing" type="java.lang.String"/>
 		<attribute name="recordUrl" type="java.lang.String"/>
+		<attribute name="pharmaProjectsDrug" type="java.lang.Boolean"/>
 		<collection name="meshTerms" referenced-type="MeshTerm" reverse-reference="pharmaProjects"/>
 		<collection name="compounds" referenced-type="PharmaProjectCompound" reverse-reference="pharmaProject"/>
 		<collection name="targets" referenced-type="Gene" reverse-reference="pharmaProjects"/>
